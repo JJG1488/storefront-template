@@ -59,7 +59,9 @@ export default async function ProductPage({ params }: Props) {
           </p>
           <p className="text-gray-600 mb-8">{product.description}</p>
 
-          {product.inventory_count !== undefined &&
+          {/* Show low stock warning only when tracking inventory */}
+          {product.track_inventory &&
+            product.inventory_count !== null &&
             product.inventory_count <= 5 &&
             product.inventory_count > 0 && (
               <p className="text-orange-600 mb-4">
@@ -67,7 +69,8 @@ export default async function ProductPage({ params }: Props) {
               </p>
             )}
 
-          {product.inventory_count === 0 ? (
+          {/* Only show out of stock when tracking inventory AND count is 0 */}
+          {product.track_inventory && product.inventory_count === 0 ? (
             <button
               disabled
               className="w-full py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"

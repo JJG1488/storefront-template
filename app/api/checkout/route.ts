@@ -43,19 +43,18 @@ export async function POST(request: NextRequest): Promise<Response> {
         );
       }
 
-      // Check stock availability
+      // Check stock availability only when inventory tracking is enabled
       if (
+        product.track_inventory &&
         product.inventory_count !== null &&
-        product.inventory_count !== undefined
+        product.inventory_count < item.quantity
       ) {
-        if (product.inventory_count < item.quantity) {
-          stockIssues.push({
-            productId: product.id,
-            productName: product.name,
-            requested: item.quantity,
-            available: product.inventory_count,
-          });
-        }
+        stockIssues.push({
+          productId: product.id,
+          productName: product.name,
+          requested: item.quantity,
+          available: product.inventory_count,
+        });
       }
 
       lineItems.push({

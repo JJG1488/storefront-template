@@ -120,8 +120,8 @@ export default function CartPage() {
                     Only {stockError.available} in stock
                   </p>
                 )}
-                {item.product.inventory_count !== null &&
-                  item.product.inventory_count !== undefined &&
+                {item.product.track_inventory &&
+                  item.product.inventory_count !== null &&
                   !stockError && (
                     <p className="text-gray-500 text-sm mt-1">
                       {item.product.inventory_count} in stock
@@ -143,8 +143,8 @@ export default function CartPage() {
                     updateQuantity(item.product.id, item.quantity + 1)
                   }
                   disabled={
+                    item.product.track_inventory &&
                     item.product.inventory_count !== null &&
-                    item.product.inventory_count !== undefined &&
                     item.quantity >= item.product.inventory_count
                   }
                   className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"

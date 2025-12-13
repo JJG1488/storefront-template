@@ -6,7 +6,8 @@ export interface Product {
   description: string;
   price: number; // in cents
   images: string[];
-  inventory_count?: number;
+  track_inventory: boolean;
+  inventory_count: number | null;
 }
 
 // Fetch products from Supabase
@@ -46,6 +47,7 @@ export async function getProducts(): Promise<Product[]> {
       images: (p.images || []).map((img: unknown) =>
         typeof img === "string" ? img : (img as { url: string }).url
       ),
+      track_inventory: p.track_inventory ?? false,
       inventory_count: p.inventory_count,
     }));
   } catch (err) {
@@ -88,6 +90,7 @@ export async function getProduct(id: string): Promise<Product | null> {
       images: (data.images || []).map((img: unknown) =>
         typeof img === "string" ? img : (img as { url: string }).url
       ),
+      track_inventory: data.track_inventory ?? false,
       inventory_count: data.inventory_count,
     };
   } catch (err) {
