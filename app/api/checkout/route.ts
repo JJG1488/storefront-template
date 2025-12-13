@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getProduct } from "@/data/products";
+import { getProductAdmin } from "@/data/products";
 import { getStoreConfig } from "@/lib/store";
 
+// Check for required env vars at startup
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  console.error("[Checkout] STRIPE_SECRET_KEY is not configured");
+}
+
 // Initialize Stripe with the platform's secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+const stripe = new Stripe(stripeSecretKey || "", {
   apiVersion: "2023-10-16",
 });
 
@@ -22,9 +28,24 @@ interface StockIssue {
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
+    // Check Stripe is configured
+    if (!stripeSecretKey) {
+      console.error("[Checkout] STRIPE_SECRET_KEY not configured");
+      return NextResponse.json(
+        { error: "Payment system not configured" },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { items } = body as { items: CartItem[] };
     const store = getStoreConfig();
+
+    console.log("[Checkout] Processing checkout", {
+      itemCount: items?.length,
+      storeId: store.id,
+      hasStripeAccount: !!store.stripeAccountId,
+    });
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "No items in cart" }, { status: 400 });
@@ -35,8 +56,9 @@ export async function POST(request: NextRequest): Promise<Response> {
     const stockIssues: StockIssue[] = [];
 
     for (const item of items) {
-      const product = await getProduct(item.productId);
+      const product = await getProductAdmin(item.productId);
       if (!product) {
+        console.error("[Checkout] Product not found:", item.productId);
         return NextResponse.json(
           { error: `Product not found: ${item.productId}` },
           { status: 400 }
@@ -111,13 +133,28 @@ export async function POST(request: NextRequest): Promise<Response> {
       };
     }
 
+    console.log("[Checkout] Creating Stripe session with", lineItems.length, "items");
     const session = await stripe.checkout.sessions.create(sessionParams);
+    console.log("[Checkout] Session created:", session.id);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Checkout error:", error);
+    // Log detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    console.error("[Checkout] Error:", errorMessage);
+    console.error("[Checkout] Details:", errorDetails);
+
+    // Return appropriate error message
+    if (errorMessage.includes("api_key")) {
+      return NextResponse.json(
+        { error: "Payment system configuration error" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to create checkout session" },
+      { error: "Failed to create checkout session", details: errorMessage },
       { status: 500 }
     );
   }

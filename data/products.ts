@@ -1,4 +1,4 @@
-import { getSupabase, getStoreId, isBuildTime } from "@/lib/supabase";
+import { getSupabase, getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
 
 export interface Product {
   id: string;
@@ -95,6 +95,58 @@ export async function getProduct(id: string): Promise<Product | null> {
     };
   } catch (err) {
     console.error("Failed to fetch product:", err);
+    return null;
+  }
+}
+
+// Server-side version using admin client (bypasses RLS, for API routes)
+export async function getProductAdmin(id: string): Promise<Product | null> {
+  if (isBuildTime()) {
+    return null;
+  }
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const storeId = getStoreId();
+
+    if (!supabase || !storeId) {
+      console.error("[getProductAdmin] Missing supabase client or storeId", {
+        hasSupabase: !!supabase,
+        storeId
+      });
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .eq("store_id", storeId)
+      .single();
+
+    if (error) {
+      console.error("[getProductAdmin] Supabase error:", error);
+      return null;
+    }
+
+    if (!data) {
+      console.error("[getProductAdmin] No data returned for product:", id);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description || "",
+      price: Math.round(data.price * 100), // Convert dollars to cents
+      images: (data.images || []).map((img: unknown) =>
+        typeof img === "string" ? img : (img as { url: string }).url
+      ),
+      track_inventory: data.track_inventory ?? false,
+      inventory_count: data.inventory_count,
+    };
+  } catch (err) {
+    console.error("[getProductAdmin] Failed to fetch product:", err);
     return null;
   }
 }
