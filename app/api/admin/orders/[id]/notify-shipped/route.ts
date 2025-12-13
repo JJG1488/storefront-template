@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { activeTokens } from "@/lib/admin-tokens";
-import { getSupabase, getStoreId } from "@/lib/supabase";
+import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { sendShippingNotification } from "@/lib/email";
 
 // Helper to verify auth
@@ -20,7 +20,7 @@ export async function POST(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
     const { id } = await params;
 

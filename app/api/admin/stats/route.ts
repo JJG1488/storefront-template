@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { activeTokens } from "@/lib/admin-tokens";
-import { getSupabase, getStoreId } from "@/lib/supabase";
+import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   // Verify auth
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
 
     if (!supabase || !storeId) {

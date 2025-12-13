@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { activeTokens } from "@/lib/admin-tokens";
-import { getSupabase, getStoreId } from "@/lib/supabase";
+import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 
 // Helper to verify auth
 function verifyAuth(request: NextRequest): boolean {
@@ -19,7 +19,7 @@ export async function GET(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
     const { id } = await params;
 
@@ -55,7 +55,7 @@ export async function PUT(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
     const { id } = await params;
 
@@ -103,7 +103,7 @@ export async function DELETE(
   }
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
     const { id } = await params;
 
