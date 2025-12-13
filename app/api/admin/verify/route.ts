@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { activeTokens } from "../login/route";
+import { activeTokens } from "@/lib/admin-tokens";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");

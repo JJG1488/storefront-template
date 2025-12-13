@@ -1,22 +1,9 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-interface AdminContextType {
-  isAuthenticated: boolean;
-  login: (password: string) => Promise<boolean>;
-  logout: () => void;
-}
-
-const AdminContext = createContext<AdminContextType | null>(null);
-
-export function useAdmin() {
-  const context = useContext(AdminContext);
-  if (!context) throw new Error("useAdmin must be used within AdminProvider");
-  return context;
-}
+import { AdminContext } from "@/lib/admin-context";
 
 function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean> }) {
   const [password, setPassword] = useState("");

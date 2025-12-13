@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
+import { activeTokens } from "@/lib/admin-tokens";
 
 // Simple token generation - in production use proper JWT
 function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
-
-// Store active tokens (in-memory, resets on deploy - acceptable for admin)
-const activeTokens = new Set<string>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Clean up old tokens (keep max 10)
     if (activeTokens.size > 10) {
       const oldest = activeTokens.values().next().value;
-      activeTokens.delete(oldest);
+      if (oldest) activeTokens.delete(oldest);
     }
 
     return NextResponse.json({ token });
@@ -43,6 +41,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }
-
-// Export for use in other routes
-export { activeTokens };
