@@ -42,7 +42,10 @@ export async function getProducts(): Promise<Product[]> {
       name: p.name,
       description: p.description || "",
       price: Math.round(p.price * 100), // Convert dollars to cents
-      images: p.images || [],
+      // Handle both string URLs and {url, alt, position} objects
+      images: (p.images || []).map((img: unknown) =>
+        typeof img === "string" ? img : (img as { url: string }).url
+      ),
       inventory_count: p.inventory_count,
     }));
   } catch (err) {
@@ -81,7 +84,10 @@ export async function getProduct(id: string): Promise<Product | null> {
       name: data.name,
       description: data.description || "",
       price: Math.round(data.price * 100), // Convert dollars to cents
-      images: data.images || [],
+      // Handle both string URLs and {url, alt, position} objects
+      images: (data.images || []).map((img: unknown) =>
+        typeof img === "string" ? img : (img as { url: string }).url
+      ),
       inventory_count: data.inventory_count,
     };
   } catch (err) {

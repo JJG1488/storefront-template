@@ -1,0 +1,217 @@
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import { getSupabase, getStoreId } from "@/lib/supabase";
+import { sendOrderConfirmation, sendNewOrderAlert } from "@/lib/email";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2023-10-16",
+});
+
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.text();
+    const signature = request.headers.get("stripe-signature");
+
+    if (!signature || !webhookSecret) {
+      console.error("Missing signature or webhook secret");
+      return NextResponse.json(
+        { error: "Missing signature" },
+        { status: 400 }
+      );
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err);
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 400 }
+      );
+    }
+
+    // Handle checkout.session.completed event
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      // Only process if payment is successful
+      if (session.payment_status !== "paid") {
+        return NextResponse.json({ received: true });
+      }
+
+      await handleSuccessfulCheckout(session);
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json(
+      { error: "Webhook handler failed" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
+  const supabase = getSupabase();
+  const storeId = getStoreId();
+
+  if (!supabase || !storeId) {
+    console.error("Store not configured");
+    return;
+  }
+
+  // Check if order already exists (idempotency)
+  const { data: existingOrder } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("stripe_session_id", session.id)
+    .single();
+
+  if (existingOrder) {
+    console.log("Order already exists for session:", session.id);
+    return;
+  }
+
+  // Retrieve line items from Stripe session
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+    expand: ["data.price.product"],
+  });
+
+  // Get customer details from session
+  const customerEmail = session.customer_details?.email || "";
+  const customerName = session.customer_details?.name || "";
+  const shippingAddress = session.shipping_details?.address || {};
+
+  // Calculate totals
+  const subtotal = session.amount_subtotal || 0;
+  const total = session.amount_total || 0;
+  const tax = (session.total_details?.amount_tax || 0);
+  const shippingCost = (session.total_details?.amount_shipping || 0);
+
+  // Create order
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert({
+      store_id: storeId,
+      stripe_session_id: session.id,
+      stripe_payment_intent_id: session.payment_intent as string,
+      customer_email: customerEmail,
+      customer_name: customerName,
+      shipping_address: shippingAddress,
+      subtotal,
+      total,
+      tax,
+      shipping_cost: shippingCost,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (orderError || !order) {
+    console.error("Failed to create order:", orderError);
+    return;
+  }
+
+  // Process line items - create order items and decrement inventory
+  const orderItems: Array<{
+    product_name: string;
+    quantity: number;
+    price_at_time: number;
+  }> = [];
+
+  for (const item of lineItems.data) {
+    const productData = item.price?.product as Stripe.Product;
+    const productId = productData?.metadata?.product_id;
+    const quantity = item.quantity || 1;
+    const productName = item.description || productData?.name || "Unknown Product";
+    const priceAtTime = item.price?.unit_amount || 0;
+
+    // Create order item
+    await supabase.from("order_items").insert({
+      order_id: order.id,
+      product_id: productId || null,
+      product_name: productName,
+      quantity,
+      price_at_time: priceAtTime,
+    });
+
+    orderItems.push({
+      product_name: productName,
+      quantity,
+      price_at_time: priceAtTime,
+    });
+
+    // Decrement inventory if we have a product ID
+    if (productId) {
+      await decrementInventory(supabase, productId, quantity);
+    }
+  }
+
+  console.log("Order created successfully:", order.id);
+
+  // Send email notifications (fire and forget - don't block webhook response)
+  const orderDetails = {
+    orderId: order.id,
+    customerName,
+    customerEmail,
+    items: orderItems,
+    subtotal,
+    tax,
+    shippingCost,
+    total,
+    shippingAddress: shippingAddress as {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    },
+  };
+
+  // Send order confirmation to customer
+  sendOrderConfirmation(orderDetails).catch((err) => {
+    console.error("Failed to send order confirmation:", err);
+  });
+
+  // Send new order alert to store owner
+  sendNewOrderAlert(orderDetails).catch((err) => {
+    console.error("Failed to send new order alert:", err);
+  });
+}
+
+async function decrementInventory(
+  supabase: ReturnType<typeof getSupabase>,
+  productId: string,
+  quantity: number
+) {
+  if (!supabase) return;
+
+  // Get current inventory
+  const { data: product } = await supabase
+    .from("products")
+    .select("inventory_count, track_inventory")
+    .eq("id", productId)
+    .single();
+
+  if (!product || !product.track_inventory || product.inventory_count === null) {
+    return; // No inventory tracking for this product
+  }
+
+  // Decrement inventory (don't go below 0)
+  const newCount = Math.max(0, product.inventory_count - quantity);
+
+  await supabase
+    .from("products")
+    .update({ inventory_count: newCount })
+    .eq("id", productId);
+
+  console.log(
+    `Inventory updated for product ${productId}: ${product.inventory_count} -> ${newCount}`
+  );
+}

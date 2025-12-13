@@ -13,6 +13,13 @@ interface CartItem {
   quantity: number;
 }
 
+interface StockIssue {
+  productId: string;
+  productName: string;
+  requested: number;
+  available: number;
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     const body = await request.json();
@@ -23,8 +30,9 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: "No items in cart" }, { status: 400 });
     }
 
-    // Build line items for Stripe Checkout
+    // Build line items for Stripe Checkout and validate stock
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    const stockIssues: StockIssue[] = [];
 
     for (const item of items) {
       const product = await getProduct(item.productId);
@@ -35,6 +43,21 @@ export async function POST(request: NextRequest): Promise<Response> {
         );
       }
 
+      // Check stock availability
+      if (
+        product.inventory_count !== null &&
+        product.inventory_count !== undefined
+      ) {
+        if (product.inventory_count < item.quantity) {
+          stockIssues.push({
+            productId: product.id,
+            productName: product.name,
+            requested: item.quantity,
+            available: product.inventory_count,
+          });
+        }
+      }
+
       lineItems.push({
         price_data: {
           currency: "usd",
@@ -43,11 +66,25 @@ export async function POST(request: NextRequest): Promise<Response> {
             description: product.description || undefined,
             images:
               product.images.length > 0 ? [product.images[0]] : undefined,
+            metadata: {
+              product_id: product.id, // For webhook to link to inventory
+            },
           },
           unit_amount: product.price, // Already in cents
         },
         quantity: item.quantity,
       });
+    }
+
+    // If any stock issues, return them
+    if (stockIssues.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Some items have insufficient stock",
+          stockIssues,
+        },
+        { status: 409 }
+      );
     }
 
     // Get the origin for success/cancel URLs
