@@ -58,7 +58,14 @@ export async function POST(request: NextRequest) {
     const emailSent = await sendPasswordResetEmail(ownerEmail, resetUrl);
 
     if (!emailSent) {
-      console.warn("Failed to send reset email, but token was created");
+      console.error("Failed to send reset email - RESEND_API_KEY may not be configured");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unable to send password reset email. Please contact support."
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
