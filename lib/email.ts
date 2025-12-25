@@ -414,7 +414,7 @@ export async function sendContactFormEmail(
     await resend.emails.send({
       from: getFromAddress(),
       to: ownerEmail,
-      replyTo: fromEmail,
+      reply_to: fromEmail,
       subject: `Contact Form: ${subjectLabels[subject] || subject} - ${store.name}`,
       html: `
         <!DOCTYPE html>
