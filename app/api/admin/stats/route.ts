@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { activeTokens } from "@/lib/admin-tokens";
+import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
-  // Verify auth
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.replace("Bearer ", "");
-
-  if (!token || !activeTokens.has(token)) {
+  if (!(await verifyAuthFromRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

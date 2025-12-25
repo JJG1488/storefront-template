@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
-import { activeTokens } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
+
+// Token expiration: 24 hours
+const TOKEN_EXPIRY_HOURS = 24;
 
 // Simple token generation - in production use proper JWT
 function generateToken(): string {
@@ -35,14 +37,50 @@ function secureCompareHash(password: string, storedHash: string): boolean {
   return result === 0;
 }
 
-function createAuthToken(): string {
+async function createAuthToken(storeId: string, supabase: ReturnType<typeof getSupabaseAdmin>): Promise<string | null> {
   const token = generateToken();
-  activeTokens.add(token);
+  const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
 
-  // Clean up old tokens (keep max 10)
-  if (activeTokens.size > 10) {
-    const oldest = activeTokens.values().next().value;
-    if (oldest) activeTokens.delete(oldest);
+  if (!supabase) {
+    console.error("Supabase not available for token creation");
+    return null;
+  }
+
+  // Clean up expired tokens for this store
+  await supabase
+    .from("admin_sessions")
+    .delete()
+    .eq("store_id", storeId)
+    .lt("expires_at", new Date().toISOString());
+
+  // Limit active sessions per store (keep max 10)
+  const { data: sessions } = await supabase
+    .from("admin_sessions")
+    .select("id, created_at")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: true });
+
+  if (sessions && sessions.length >= 10) {
+    // Delete oldest sessions
+    const toDelete = sessions.slice(0, sessions.length - 9);
+    await supabase
+      .from("admin_sessions")
+      .delete()
+      .in("id", toDelete.map(s => s.id));
+  }
+
+  // Insert new token
+  const { error } = await supabase
+    .from("admin_sessions")
+    .insert({
+      store_id: storeId,
+      token,
+      expires_at: expiresAt,
+    });
+
+  if (error) {
+    console.error("Failed to create auth token:", error);
+    return null;
   }
 
   return token;
@@ -53,33 +91,44 @@ export async function POST(request: NextRequest) {
     const { password } = await request.json();
     const adminPassword = process.env.ADMIN_PASSWORD;
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    const storeId = getStoreId();
+    const supabase = getSupabaseAdmin();
+
+    if (!storeId) {
+      return NextResponse.json(
+        { error: "Store not configured" },
+        { status: 500 }
+      );
+    }
 
     // Check Super Admin password first (platform-wide access)
     if (superAdminPassword && secureCompare(password, superAdminPassword)) {
-      const token = createAuthToken();
+      const token = await createAuthToken(storeId, supabase);
+      if (!token) {
+        return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
+      }
       return NextResponse.json({ token, isSuperAdmin: true });
     }
 
     // Check database password (set via password reset)
-    const storeId = getStoreId();
-    if (storeId) {
-      const supabase = getSupabaseAdmin();
-      if (supabase) {
-        const { data: store } = await supabase
-          .from("stores")
-          .select("admin_password_hash")
-          .eq("id", storeId)
-          .single();
+    if (supabase) {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("admin_password_hash")
+        .eq("id", storeId)
+        .single();
 
-        if (store?.admin_password_hash) {
-          if (secureCompareHash(password, store.admin_password_hash)) {
-            const token = createAuthToken();
-            return NextResponse.json({ token });
+      if (store?.admin_password_hash) {
+        if (secureCompareHash(password, store.admin_password_hash)) {
+          const token = await createAuthToken(storeId, supabase);
+          if (!token) {
+            return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
           }
-          // If DB password exists but doesn't match, don't fall back to env var
-          // This ensures reset password overrides the original
-          return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+          return NextResponse.json({ token });
         }
+        // If DB password exists but doesn't match, don't fall back to env var
+        // This ensures reset password overrides the original
+        return NextResponse.json({ error: "Invalid password" }, { status: 401 });
       }
     }
 
@@ -95,7 +144,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    const token = createAuthToken();
+    const token = await createAuthToken(storeId, supabase);
+    if (!token) {
+      return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
+    }
     return NextResponse.json({ token });
   } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });

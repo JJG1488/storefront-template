@@ -377,3 +377,159 @@ export async function sendShippingNotification(
     return false;
   }
 }
+
+/**
+ * Send contact form submission to store owner
+ */
+export async function sendContactFormEmail(
+  fromName: string,
+  fromEmail: string,
+  subject: string,
+  message: string
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping contact form email");
+    return false;
+  }
+
+  const ownerEmail = getOwnerEmail();
+  if (!ownerEmail) {
+    console.log("Store owner email not configured, skipping contact form");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+
+  const subjectLabels: Record<string, string> = {
+    general: "General Inquiry",
+    order: "Order Question",
+    shipping: "Shipping & Delivery",
+    returns: "Returns & Exchanges",
+    product: "Product Information",
+    other: "Other",
+  };
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: ownerEmail,
+      replyTo: fromEmail,
+      subject: `Contact Form: ${subjectLabels[subject] || subject} - ${store.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: ${brandColor}; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">New Contact Form Message</h2>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">${store.name}</p>
+          </div>
+
+          <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;">
+            <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #666; font-size: 14px;">From</p>
+              <p style="margin: 5px 0 0 0; font-weight: 600;">${fromName}</p>
+              <p style="margin: 2px 0 0 0;"><a href="mailto:${fromEmail}" style="color: ${brandColor};">${fromEmail}</a></p>
+            </div>
+
+            <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #666; font-size: 14px;">Subject</p>
+              <p style="margin: 5px 0 0 0; font-weight: 600;">${subjectLabels[subject] || subject}</p>
+            </div>
+
+            <div>
+              <p style="margin: 0; color: #666; font-size: 14px;">Message</p>
+              <div style="margin-top: 10px; padding: 15px; background: #f9fafb; border-radius: 8px; white-space: pre-wrap;">${message}</div>
+            </div>
+
+            <div style="margin-top: 30px;">
+              <a href="mailto:${fromEmail}?subject=Re: ${subjectLabels[subject] || subject}"
+                 style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">
+                Reply to ${fromName}
+              </a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Contact form email sent to store owner:", ownerEmail);
+    return true;
+  } catch (error) {
+    console.error("Failed to send contact form email:", error);
+    return false;
+  }
+}
+
+/**
+ * Send newsletter welcome email to new subscriber
+ */
+export async function sendNewsletterWelcome(email: string): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping newsletter welcome");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: email,
+      subject: `Welcome to ${store.name}!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+          </div>
+
+          <div style="background: linear-gradient(135deg, ${brandColor}20, ${brandColor}10); border: 1px solid ${brandColor}30; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+            <h2 style="color: ${brandColor}; margin: 0 0 10px 0;">You're In!</h2>
+            <p style="color: #666; margin: 0;">Welcome to the ${store.name} community</p>
+          </div>
+
+          <p>Thanks for subscribing to our newsletter!</p>
+
+          <p>You'll be the first to know about:</p>
+          <ul style="padding-left: 20px; color: #555;">
+            <li>New product launches</li>
+            <li>Exclusive discounts & promotions</li>
+            <li>Behind-the-scenes updates</li>
+            <li>Special member-only offers</li>
+          </ul>
+
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || ""}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Shop Now
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>You're receiving this because you subscribed to ${store.name}.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Newsletter welcome email sent to:", email);
+    return true;
+  } catch (error) {
+    console.error("Failed to send newsletter welcome email:", error);
+    return false;
+  }
+}

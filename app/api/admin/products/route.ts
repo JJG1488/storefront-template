@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { activeTokens } from "@/lib/admin-tokens";
+import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
-
-// Helper to verify auth
-function verifyAuth(request: NextRequest): boolean {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.replace("Bearer ", "");
-  return token ? activeTokens.has(token) : false;
-}
 
 // GET - List products
 export async function GET(request: NextRequest) {
-  if (!verifyAuth(request)) {
+  if (!(await verifyAuthFromRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -52,7 +45,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create product
 export async function POST(request: NextRequest) {
-  if (!verifyAuth(request)) {
+  if (!(await verifyAuthFromRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
