@@ -194,7 +194,7 @@ export default function ContactPage() {
                 <Mail className="w-5 h-5 text-brand mt-0.5" />
                 <div>
                   <p className="font-medium text-gray-900">Email</p>
-                  <p className="text-gray-600 text-sm">support@{store.name.toLowerCase().replace(/\s+/g, "")}.com</p>
+                  <p className="text-gray-600 text-sm">{process.env.NEXT_PUBLIC_CONTACT_EMAIL || `support@${store.name.toLowerCase().replace(/\s+/g, "")}.com`}</p>
                 </div>
               </div>
 

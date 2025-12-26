@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
 import { getStoreConfig } from "@/lib/store";
+import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 
 // GET - Fetch current settings
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (isBuildTime()) {
     return NextResponse.json({ settings: {} });
+  }
+
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -72,6 +77,10 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   if (isBuildTime()) {
     return NextResponse.json({ error: "Not available during build" }, { status: 400 });
+  }
+
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

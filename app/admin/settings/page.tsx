@@ -54,6 +54,7 @@ export default function SettingsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"general" | "shipping" | "returns" | "faq" | "social">("general");
 
   // Load current settings from environment
@@ -62,13 +63,20 @@ export default function SettingsPage() {
     // which uses environment variables
     const loadSettings = async () => {
       try {
-        const res = await fetch("/api/admin/settings");
+        const token = localStorage.getItem("admin_token");
+        const res = await fetch("/api/admin/settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (res.ok) {
           const data = await res.json();
           setSettings(data.settings);
+        } else {
+          const data = await res.json();
+          setError(data.error || "Failed to load settings");
         }
-      } catch (error) {
-        console.error("Failed to load settings:", error);
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+        setError("Failed to load settings");
       }
     };
     loadSettings();
@@ -76,19 +84,28 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setError("");
     try {
+      const token = localStorage.getItem("admin_token");
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(settings),
       });
 
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to save settings");
       }
-    } catch (error) {
-      console.error("Failed to save settings:", error);
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+      setError("Failed to save settings. Please try again.");
     }
     setSaving(false);
   };
@@ -298,6 +315,19 @@ export default function SettingsPage() {
           </button>
         ))}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="text-red-400 hover:text-red-600"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* General Tab */}
       {activeTab === "general" && (
