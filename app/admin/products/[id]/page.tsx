@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface ProductImage {
   url: string;
@@ -72,8 +73,27 @@ export default function EditProductPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError("");
+
+    // Validate all required fields
+    if (!name.trim()) {
+      setError("Please enter a product name.");
+      return;
+    }
+    if (!description.trim()) {
+      setError("Please enter a product description.");
+      return;
+    }
+    if (!price || parseFloat(price) <= 0) {
+      setError("Please enter a valid price.");
+      return;
+    }
+    if (!imageUrl) {
+      setError("Please upload a product image.");
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const token = localStorage.getItem("admin_token");
@@ -84,13 +104,13 @@ export default function EditProductPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name,
-          description,
+          name: name.trim(),
+          description: description.trim(),
           price: parseFloat(price) || 0,
           status,
           track_inventory: trackInventory,
           inventory_count: trackInventory ? parseInt(inventoryCount) || 0 : null,
-          images: imageUrl ? [{ url: imageUrl, alt: name, position: 0 }] : [],
+          images: imageUrl ? [{ url: imageUrl, alt: name.trim(), position: 0 }] : [],
         }),
       });
 
@@ -161,7 +181,7 @@ export default function EditProductPage() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Name
+              Product Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -174,26 +194,12 @@ export default function EditProductPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
+              Description <span className="text-red-500">*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Price ($)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
               required
             />
@@ -201,23 +207,20 @@ export default function EditProductPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image URL
+              Price ($) <span className="text-red-500">*</span>
             </label>
             <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://example.com/image.jpg"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+              required
             />
-            {imageUrl && (
-              <img
-                src={imageUrl}
-                alt="Preview"
-                className="mt-2 w-32 h-32 object-cover rounded"
-              />
-            )}
           </div>
+
+          <ImageUpload value={imageUrl} onChange={setImageUrl} required />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
