@@ -53,8 +53,21 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin();
     const storeId = getStoreId();
 
-    if (!supabase || !storeId) {
-      return NextResponse.json({ error: "Store not configured" }, { status: 500 });
+    // Detailed error checking for configuration issues
+    if (!supabase) {
+      console.error("Supabase client not initialized - check NEXT_PUBLIC_SUPABASE_URL");
+      return NextResponse.json({
+        error: "Database not configured",
+        detail: "NEXT_PUBLIC_SUPABASE_URL may be missing"
+      }, { status: 500 });
+    }
+
+    if (!storeId) {
+      console.error("Store ID not configured - NEXT_PUBLIC_STORE_ID is empty or missing");
+      return NextResponse.json({
+        error: "Store not configured",
+        detail: "NEXT_PUBLIC_STORE_ID is missing"
+      }, { status: 500 });
     }
 
     const body = await request.json();
@@ -75,8 +88,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Product create error:", error);
-      return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
+      console.error("Product create error:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        storeId: storeId,
+      });
+      return NextResponse.json({
+        error: "Failed to create product",
+        detail: error.message,
+        code: error.code
+      }, { status: 500 });
     }
 
     return NextResponse.json(data);

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronDown, HelpCircle, Search } from "lucide-react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { getContentSettings, defaultContent, type FAQItem } from "@/lib/content";
 
 function FAQAccordion({ items }: { items: FAQItem[] }) {
@@ -68,28 +66,22 @@ export default function FAQPage() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="max-w-3xl mx-auto px-4 py-12">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3" />
-            <div className="h-12 bg-gray-200 rounded" />
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded-xl" />
-              ))}
-            </div>
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
+          <div className="h-12 bg-gray-200 rounded" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded-xl" />
+            ))}
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Header />
-      <main className="max-w-3xl mx-auto px-4 py-12">
+    <div className="max-w-3xl mx-auto px-4 py-12">
         {/* Breadcrumb */}
         <nav className="mb-8">
           <Link
@@ -154,8 +146,6 @@ export default function FAQPage() {
             Contact Support
           </Link>
         </div>
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

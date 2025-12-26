@@ -34,8 +34,12 @@ export function getSupabaseAdmin(): SupabaseClient | null {
   if (!supabaseAdminInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     // Use service role key for admin operations, fall back to anon key
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    supabaseAdminInstance = createClient(supabaseUrl, serviceRoleKey);
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.warn("WARNING: SUPABASE_SERVICE_ROLE_KEY not set - admin operations may fail due to RLS policies");
+    }
+    const key = serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    supabaseAdminInstance = createClient(supabaseUrl, key);
   }
   return supabaseAdminInstance;
 }

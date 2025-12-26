@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Truck, Package, Globe, MapPin, Clock } from "lucide-react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { getContentSettings, defaultContent, type ShippingContent } from "@/lib/content";
 
 export default function ShippingPage() {
@@ -22,28 +20,22 @@ export default function ShippingPage() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="max-w-4xl mx-auto px-4 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-8 bg-gray-200 rounded w-1/3" />
-            <div className="h-4 bg-gray-200 rounded w-2/3" />
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded" />
-              ))}
-            </div>
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="animate-pulse space-y-8">
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-gray-200 rounded w-2/3" />
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded" />
+            ))}
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-12">
+    <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Breadcrumb */}
         <nav className="mb-8">
           <Link
@@ -166,8 +158,6 @@ export default function ShippingPage() {
             </Link>
           </section>
         </div>
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getProduct, getProducts, formatPrice } from "@/data/products";
+import { getProductReviews, getProductRating } from "@/lib/reviews";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { ProductTabs } from "@/components/ProductTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,6 +22,23 @@ export default async function ProductPage({ params }: Props) {
   if (!product) {
     notFound();
   }
+
+  // Fetch reviews and rating in parallel
+  const [reviews, rating] = await Promise.all([
+    getProductReviews(params.id),
+    getProductRating(params.id),
+  ]);
+
+  // Transform reviews to match ProductTabs expected format (snake_case to camelCase)
+  const formattedReviews = reviews.map((review) => ({
+    id: review.id,
+    authorName: review.author_name,
+    rating: review.rating,
+    title: review.title || undefined,
+    body: review.body || "",
+    isVerified: review.is_verified,
+    createdAt: review.created_at,
+  }));
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
@@ -81,6 +100,17 @@ export default async function ProductPage({ params }: Props) {
             <AddToCartButton product={product} />
           )}
         </div>
+      </div>
+
+      {/* Product Tabs: Description, Specifications, Care, Reviews */}
+      <div className="mt-12">
+        <ProductTabs
+          description={product.description || ""}
+          specifications={product.specifications}
+          careInstructions={product.care_instructions}
+          reviews={formattedReviews}
+          averageRating={rating.average}
+        />
       </div>
     </div>
   );
