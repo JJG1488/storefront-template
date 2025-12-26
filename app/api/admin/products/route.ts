@@ -4,6 +4,17 @@ import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { canAddProduct, getProductLimit } from "@/lib/products";
 import { getFeatureFlags } from "@/hooks/useFeatureFlags";
 
+// Helper function to generate URL-friendly slug from product name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 100);
+}
+
 // GET - List products
 export async function GET(request: NextRequest) {
   if (!(await verifyAuthFromRequest(request))) {
@@ -114,6 +125,7 @@ export async function POST(request: NextRequest) {
       .insert({
         store_id: storeId,
         name: body.name,
+        slug: generateSlug(body.name),
         description: body.description || "",
         price: body.price || 0,
         images: body.images || [],
