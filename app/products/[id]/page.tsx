@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProduct, getProducts, formatPrice } from "@/data/products";
+import { getProduct, formatPrice } from "@/data/products";
 import { getProductReviews, getProductRating } from "@/lib/reviews";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductTabs } from "@/components/ProductTabs";
@@ -102,12 +102,10 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Product Tabs: Description, Specifications, Care, Reviews */}
+      {/* Product Tabs: Description, Reviews */}
       <div className="mt-12">
         <ProductTabs
           description={product.description || ""}
-          specifications={product.specifications}
-          careInstructions={product.care_instructions}
           reviews={formattedReviews}
           averageRating={rating.average}
         />
