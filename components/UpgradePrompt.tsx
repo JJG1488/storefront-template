@@ -68,20 +68,20 @@ export function UpgradePrompt({
 
           <div className="flex flex-wrap gap-3">
             <a
-              href="mailto:support@gosovereign.io?subject=Upgrade%20to%20Pro"
+              href="https://gosovereign.io/wizard/preview"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg transition-colors"
             >
-              Contact Support to Upgrade
+              Upgrade Now
               <ArrowUpRight className="w-4 h-4" />
             </a>
 
             <a
-              href="https://gosovereign.io/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:support@gosovereign.io?subject=Upgrade%20to%20Pro"
               className="inline-flex items-center gap-2 text-amber-700 hover:text-amber-800 font-medium px-4 py-2 transition-colors"
             >
-              View Plans
+              Contact Support
             </a>
           </div>
         </div>
@@ -111,7 +111,9 @@ export function UpgradeBanner({ className = "" }: { className?: string }) {
           <p className="text-xs text-amber-100">Unlock all features</p>
         </div>
         <a
-          href="mailto:support@gosovereign.io?subject=Upgrade%20to%20Pro"
+          href="https://gosovereign.io/wizard/preview"
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex-shrink-0 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-xs font-medium transition-colors"
         >
           Upgrade

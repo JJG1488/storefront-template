@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ProductLimitPrompt } from "@/components/UpgradePrompt";
 
 export default function NewProductPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [limitReached, setLimitReached] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -42,13 +44,22 @@ export default function NewProductPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to create product");
+        const data = await res.json();
+
+        // Handle product limit error (403)
+        if (res.status === 403 && data.upgrade) {
+          setLimitReached(true);
+          setError(data.detail || "Product limit reached. Upgrade to Pro for unlimited products.");
+          return;
+        }
+
+        throw new Error(data.detail || data.error || "Failed to create product");
       }
 
       router.push("/admin/products");
     } catch (err) {
       console.error("Create error:", err);
-      setError("Failed to create product");
+      setError(err instanceof Error ? err.message : "Failed to create product");
     } finally {
       setSaving(false);
     }
@@ -66,7 +77,14 @@ export default function NewProductPage() {
         </Link>
       </div>
 
-      {error && (
+      {/* Show upgrade prompt when product limit is reached */}
+      {limitReached && (
+        <div className="mb-6">
+          <ProductLimitPrompt />
+        </div>
+      )}
+
+      {error && !limitReached && (
         <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
           {error}
         </div>

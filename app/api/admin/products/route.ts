@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
+import { canAddProduct, getProductLimit } from "@/lib/products";
+import { getFeatureFlags } from "@/hooks/useFeatureFlags";
 
 // GET - List products
 export async function GET(request: NextRequest) {
@@ -36,7 +38,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    // Include tier info for UI limit display
+    const { tier, maxProducts, isUnlimitedProducts } = getFeatureFlags();
+    const products = data || [];
+
+    return NextResponse.json({
+      products,
+      tier: {
+        name: tier,
+        maxProducts: isUnlimitedProducts ? null : maxProducts,
+        isUnlimited: isUnlimitedProducts,
+        current: products.length,
+        canAdd: canAddProduct(products.length),
+      }
+    });
   } catch (error) {
     console.error("Products error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -68,6 +83,28 @@ export async function POST(request: NextRequest) {
         error: "Store not configured",
         detail: "NEXT_PUBLIC_STORE_ID is missing"
       }, { status: 500 });
+    }
+
+    // Check product limit for Starter tier (10 max)
+    const { count: productCount, error: countError } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId);
+
+    if (countError) {
+      console.error("Product count error:", countError);
+    }
+
+    const currentCount = productCount || 0;
+    if (!canAddProduct(currentCount)) {
+      const limit = getProductLimit();
+      return NextResponse.json({
+        error: "Product limit reached",
+        detail: `You've reached your ${limit} product limit. Upgrade to Pro for unlimited products.`,
+        limit,
+        current: currentCount,
+        upgrade: true
+      }, { status: 403 });
     }
 
     const body = await request.json();
