@@ -69,7 +69,16 @@ export default function SettingsPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setSettings(data.settings);
+          // Merge with defaults to ensure content structure exists
+          setSettings(prev => ({
+            ...prev,
+            ...data.settings,
+            content: {
+              shipping: data.settings?.content?.shipping || defaultContent.shipping,
+              returns: data.settings?.content?.returns || defaultContent.returns,
+              faq: data.settings?.content?.faq || defaultContent.faq,
+            },
+          }));
         } else {
           const data = await res.json();
           setError(data.error || "Failed to load settings");
@@ -415,7 +424,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div className="space-y-3">
-              {settings.content?.shipping?.methods.map((method, index) => (
+              {(settings.content?.shipping?.methods || []).map((method, index) => (
                 <div key={index} className="flex gap-3 items-start">
                   <div className="flex-1 grid grid-cols-3 gap-3">
                     <input
@@ -546,7 +555,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div className="space-y-2">
-              {settings.content?.returns?.conditions.map((condition, index) => (
+              {(settings.content?.returns?.conditions || []).map((condition, index) => (
                 <div key={index} className="flex gap-2">
                   <input
                     type="text"
@@ -580,7 +589,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div className="space-y-2">
-              {settings.content?.returns?.process.map((step, index) => (
+              {(settings.content?.returns?.process || []).map((step, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <span className="w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
                     {index + 1}
@@ -642,7 +651,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4">
-            {settings.content?.faq?.map((item, index) => (
+            {(settings.content?.faq || []).map((item, index) => (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-1 space-y-3">
