@@ -124,7 +124,7 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
   );
 }
 
-function AdminNav() {
+function AdminNav({ onLogout }: { onLogout: () => void }) {
   const pathname = usePathname();
 
   const links = [
@@ -157,6 +157,12 @@ function AdminNav() {
             <Link href="/" className="text-gray-400 hover:text-white text-sm">
               View Store
             </Link>
+            <button
+              onClick={onLogout}
+              className="text-gray-400 hover:text-white text-sm ml-2 px-3 py-1 border border-gray-600 rounded hover:border-gray-400 transition-colors"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>
@@ -245,7 +251,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminContext.Provider value={{ isAuthenticated, login, logout }}>
       <div className="min-h-screen bg-gray-100">
-        <AdminNav />
+        <AdminNav onLogout={logout} />
         <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
       </div>
     </AdminContext.Provider>
