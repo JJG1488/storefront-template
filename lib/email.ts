@@ -235,6 +235,86 @@ export async function sendNewOrderAlert(order: OrderDetails): Promise<boolean> {
 }
 
 /**
+ * Send admin setup email after store deployment
+ * This is sent when a new store is deployed so the owner can set their password
+ */
+export async function sendAdminSetupEmail(
+  email: string,
+  setupUrl: string
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping admin setup email");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: email,
+      subject: `Welcome! Set Up Your Admin Password - ${store.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+            <p style="color: #666; font-size: 14px;">Your Store is Live!</p>
+          </div>
+
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">&#127881;</div>
+            <h2 style="color: #166534; margin: 0 0 10px 0;">Congratulations!</h2>
+            <p style="color: #166534; margin: 0;">Your store has been successfully deployed.</p>
+          </div>
+
+          <p>Your store is now live! To access your admin dashboard, you'll need to set up your password.</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Set Your Admin Password
+            </a>
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 24 hours. If it expires, you can request a new one by clicking "Forgot Password" on the admin login page.
+          </p>
+
+          <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-radius: 8px;">
+            <p style="margin: 0 0 10px 0; font-weight: 600;">What's next?</p>
+            <ul style="margin: 0; padding-left: 20px; color: #555;">
+              <li>Set your admin password using the link above</li>
+              <li>Add products to your store</li>
+              <li>Customize your store settings</li>
+              <li>Start accepting orders!</li>
+            </ul>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>This is an automated message from ${store.name}.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Admin setup email sent to:", email);
+    return true;
+  } catch (error) {
+    console.error("Failed to send admin setup email:", error);
+    return false;
+  }
+}
+
+/**
  * Send password reset email to store admin
  */
 export async function sendPasswordResetEmail(

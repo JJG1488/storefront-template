@@ -26,8 +26,15 @@ function MastercardIcon() {
 
 function AmexIcon() {
   return (
-    <svg className="h-6 w-auto" viewBox="0 0 40 16" fill="currentColor">
-      <path d="M7.5 5l-3 8h2l.5-1.5h3l.5 1.5h2l-3-8h-2zm1 2l1 3h-2l1-3zm8.5-2l-2 5-2-5h-2l3 8h2l3-8h-2zm7 0h-4v8h4v-1.5h-2.5v-2h2.5v-1.5h-2.5v-1.5h2.5v-1.5zm5.5 0l-2 3-2-3h-2l3 4-3 4h2l2-3 2 3h2l-3-4 3-4h-2z" />
+    <svg className="h-6 w-auto" viewBox="0 0 48 16" fill="currentColor">
+      {/* A */}
+      <path d="M4 13l3-8h2l3 8h-2l-.5-1.5h-3L6 13H4zm3.5-6l-1 3h2l-1-3z" />
+      {/* M */}
+      <path d="M13 5h2.5l1.5 5 1.5-5H21v8h-1.5V7l-1.8 6h-1.4l-1.8-6v6H13V5z" />
+      {/* E */}
+      <path d="M23 5h4v1.5h-2.5v1.5h2.5v1.5h-2.5v2h2.5V13h-4V5z" />
+      {/* X */}
+      <path d="M29 5h2l1.5 2.5L34 5h2l-2.5 4 2.5 4h-2l-1.5-2.5L31 13h-2l2.5-4L29 5z" />
     </svg>
   );
 }

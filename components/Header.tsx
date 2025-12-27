@@ -50,7 +50,7 @@ export function Header() {
                   <img
                     src={store.logoUrl}
                     alt={store.name}
-                    className="h-8 md:h-10 object-contain"
+                    className="h-8 md:h-10 object-contain rounded-lg"
                   />
                 ) : (
                   <span className="text-xl font-bold text-gray-900">

@@ -148,10 +148,20 @@ function AdminNav() {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  // Allow reset-password page to bypass authentication
+  const isResetPasswordPage = pathname === "/admin/reset-password";
+
   useEffect(() => {
+    // Skip auth check for reset-password page
+    if (isResetPasswordPage) {
+      setChecking(false);
+      return;
+    }
+
     const token = localStorage.getItem("admin_token");
     if (token) {
       // Verify token is still valid
@@ -167,7 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     } else {
       setChecking(false);
     }
-  }, []);
+  }, [isResetPasswordPage]);
 
   async function login(password: string): Promise<boolean> {
     try {
@@ -198,6 +208,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Allow reset-password page to render without authentication
+  if (isResetPasswordPage) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        {children}
       </div>
     );
   }
