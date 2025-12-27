@@ -5,12 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminContext } from "@/lib/admin-context";
 
+const SUPPORT_EMAIL = "info@gosovereign.io";
+
 function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean> }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +29,7 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
 
   async function handleForgotPassword() {
     setError("");
+    setRateLimited(false);
     setResetLoading(true);
 
     try {
@@ -38,11 +42,15 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
 
       if (res.ok) {
         setResetSent(true);
+      } else if (res.status === 429) {
+        // Rate limited
+        setRateLimited(true);
+        setError(data.error || "Too many attempts. Please try again later.");
       } else {
         setError(data.error || "Failed to send reset email");
       }
     } catch {
-      setError("Failed to send reset email");
+      setError(`Failed to send reset email. Please contact support at ${SUPPORT_EMAIL}`);
     }
     setResetLoading(false);
   }
@@ -84,7 +92,16 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
             className="w-full px-4 py-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-brand"
             autoFocus
           />
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {error && (
+            <div className={`text-sm mb-4 p-3 rounded-lg ${rateLimited ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
+              <p className={rateLimited ? 'text-amber-700' : 'text-red-600'}>{error}</p>
+              {rateLimited && (
+                <p className="mt-2 text-amber-600">
+                  Need help? <a href={`mailto:${SUPPORT_EMAIL}`} className="underline font-medium">{SUPPORT_EMAIL}</a>
+                </p>
+              )}
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -96,7 +113,7 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
         <div className="mt-4 text-center">
           <button
             onClick={handleForgotPassword}
-            disabled={resetLoading}
+            disabled={resetLoading || rateLimited}
             className="text-sm text-gray-600 hover:text-brand disabled:opacity-50"
           >
             {resetLoading ? "Sending..." : "Forgot Password?"}
