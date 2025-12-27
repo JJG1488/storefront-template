@@ -97,8 +97,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Send reset email
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    // Send reset email - construct URL from env var or request headers
+    let appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+    // Fallback: construct URL from request headers if env var not set
+    if (!appUrl) {
+      const host = request.headers.get("host");
+      const protocol = request.headers.get("x-forwarded-proto") || "https";
+      if (host) {
+        appUrl = `${protocol}://${host}`;
+      }
+    }
+
+    if (!appUrl) {
+      console.error("Cannot determine app URL for password reset link");
+      return NextResponse.json(
+        { error: "Server configuration error. Please contact support at " + SUPPORT_EMAIL },
+        { status: 500 }
+      );
+    }
+
     const resetUrl = `${appUrl}/admin/reset-password?token=${resetToken}`;
 
     const emailSent = await sendPasswordResetEmail(ownerEmail, resetUrl);

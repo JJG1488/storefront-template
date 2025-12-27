@@ -5,15 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminContext } from "@/lib/admin-context";
 
-const SUPPORT_EMAIL = "info@gosovereign.io";
-
 function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean> }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [rateLimited, setRateLimited] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,79 +22,36 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
     setLoading(false);
   }
 
-  async function handleForgotPassword() {
-    setError("");
-    setRateLimited(false);
-    setResetLoading(true);
-
-    try {
-      const res = await fetch("/api/admin/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setResetSent(true);
-      } else if (res.status === 429) {
-        // Rate limited
-        setRateLimited(true);
-        setError(data.error || "Too many attempts. Please try again later.");
-      } else {
-        setError(data.error || "Failed to send reset email");
-      }
-    } catch {
-      setError(`Failed to send reset email. Please contact support at ${SUPPORT_EMAIL}`);
-    }
-    setResetLoading(false);
-  }
-
-  if (resetSent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold mb-2">Check Your Email</h2>
-          <p className="text-gray-600 mb-4">
-            We sent a password reset link to the store owner email address.
-          </p>
-          <button
-            onClick={() => setResetSent(false)}
-            className="text-brand hover:underline"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
         <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter admin password"
-            className="w-full px-4 py-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-brand"
-            autoFocus
-          />
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <Link
+                href="/admin/forgot-password"
+                className="text-sm text-brand hover:underline"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter admin password"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
+              autoFocus
+            />
+          </div>
           {error && (
-            <div className={`text-sm mb-4 p-3 rounded-lg ${rateLimited ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
-              <p className={rateLimited ? 'text-amber-700' : 'text-red-600'}>{error}</p>
-              {rateLimited && (
-                <p className="mt-2 text-amber-600">
-                  Need help? <a href={`mailto:${SUPPORT_EMAIL}`} className="underline font-medium">{SUPPORT_EMAIL}</a>
-                </p>
-              )}
+            <div className="text-sm mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+              <p className="text-red-600">{error}</p>
             </div>
           )}
           <button
@@ -110,15 +62,6 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
             {loading ? "Verifying..." : "Login"}
           </button>
         </form>
-        <div className="mt-4 text-center">
-          <button
-            onClick={handleForgotPassword}
-            disabled={resetLoading || rateLimited}
-            className="text-sm text-gray-600 hover:text-brand disabled:opacity-50"
-          >
-            {resetLoading ? "Sending..." : "Forgot Password?"}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -175,12 +118,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // Allow reset-password page to bypass authentication
-  const isResetPasswordPage = pathname === "/admin/reset-password";
+  // Allow password-related pages to bypass authentication
+  const isPublicPage = pathname === "/admin/reset-password" || pathname === "/admin/forgot-password";
 
   useEffect(() => {
-    // Skip auth check for reset-password page
-    if (isResetPasswordPage) {
+    // Skip auth check for public pages
+    if (isPublicPage) {
       setChecking(false);
       return;
     }
@@ -200,7 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     } else {
       setChecking(false);
     }
-  }, [isResetPasswordPage]);
+  }, [isPublicPage]);
 
   async function login(password: string): Promise<boolean> {
     try {
@@ -235,8 +178,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Allow reset-password page to render without authentication
-  if (isResetPasswordPage) {
+  // Allow public pages to render without authentication
+  if (isPublicPage) {
     return (
       <div className="min-h-screen bg-gray-100">
         {children}
