@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { getStoreConfig } from "@/lib/store";
+import { getThemeById, generateThemeCSS } from "@/lib/themes";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,13 +24,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const store = getStoreConfig();
+  const theme = getThemeById(store.themePreset);
+  const themeCSS = generateThemeCSS(theme);
 
   return (
     <html lang="en">
       <head>
         <style
           dangerouslySetInnerHTML={{
-            __html: `:root { --brand-color: ${store.primaryColor}; }`,
+            __html: themeCSS,
           }}
         />
       </head>

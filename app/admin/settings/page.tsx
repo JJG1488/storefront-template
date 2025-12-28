@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles } from "lucide-react";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
 
 interface StoreSettings {
   name: string;
@@ -16,6 +18,7 @@ interface StoreSettings {
   facebookUrl: string;
   twitterUrl: string;
   tiktokUrl: string;
+  themePreset: string;
   // Content settings
   content?: {
     shipping?: {
@@ -35,6 +38,7 @@ interface StoreSettings {
 }
 
 export default function SettingsPage() {
+  const flags = useFeatureFlags();
   const [settings, setSettings] = useState<StoreSettings>({
     name: "",
     tagline: "",
@@ -46,6 +50,7 @@ export default function SettingsPage() {
     facebookUrl: "",
     twitterUrl: "",
     tiktokUrl: "",
+    themePreset: "default",
     content: {
       shipping: defaultContent.shipping,
       returns: defaultContent.returns,
@@ -55,7 +60,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"general" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "appearance" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
 
   // Load current settings from environment
   useEffect(() => {
@@ -73,6 +78,7 @@ export default function SettingsPage() {
           setSettings(prev => ({
             ...prev,
             ...data.settings,
+            themePreset: data.settings?.themePreset || "default",
             content: {
               shipping: data.settings?.content?.shipping || defaultContent.shipping,
               returns: data.settings?.content?.returns || defaultContent.returns,
@@ -121,6 +127,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "general" as const, label: "General", icon: Store },
+    { id: "appearance" as const, label: "Appearance", icon: Palette },
     { id: "shipping" as const, label: "Shipping", icon: Truck },
     { id: "returns" as const, label: "Returns", icon: Truck },
     { id: "faq" as const, label: "FAQ", icon: HelpCircle },
@@ -496,6 +503,115 @@ Contact support@gosovereign.io for assistance with custom domain setup.
             />
             <p className="mt-1 text-sm text-gray-500">
               Displayed at the top of your store. Leave empty to hide.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Appearance Tab */}
+      {activeTab === "appearance" && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-semibold text-gray-900">Store Theme</h3>
+                <p className="text-sm text-gray-500">Choose a color scheme for your storefront</p>
+              </div>
+              {!flags.premiumThemesEnabled && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                  <Lock className="w-3 h-3" />
+                  Pro Feature
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {allThemes.map((theme) => {
+                const isSelected = settings.themePreset === theme.id;
+                const isLocked = theme.isPremium && !flags.premiumThemesEnabled;
+
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => {
+                      if (!isLocked) {
+                        setSettings({ ...settings, themePreset: theme.id });
+                      }
+                    }}
+                    disabled={isLocked}
+                    className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+                      isSelected
+                        ? "border-brand bg-brand/5"
+                        : isLocked
+                        ? "border-gray-200 opacity-60 cursor-not-allowed"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {/* Theme preview */}
+                    <div className="flex gap-1.5 mb-3">
+                      <div
+                        className="w-8 h-8 rounded-lg shadow-sm"
+                        style={{ backgroundColor: theme.preview.primary }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded-lg shadow-sm"
+                        style={{ backgroundColor: theme.preview.accent }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded-lg border border-gray-200"
+                        style={{ backgroundColor: theme.preview.background }}
+                      />
+                    </div>
+
+                    {/* Theme info */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900">{theme.name}</span>
+                      {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
+                      {isSelected && <Check className="w-4 h-4 text-brand" />}
+                    </div>
+                    <p className="text-xs text-gray-500">{theme.description}</p>
+
+                    {/* Premium badge */}
+                    {theme.isPremium && !isLocked && (
+                      <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium rounded-full">
+                        <Sparkles className="w-3 h-3" />
+                        Pro
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {!flags.premiumThemesEnabled && (
+              <div className="mt-6 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900">Upgrade to Pro for Premium Themes</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Unlock 5 additional designer themes to make your store stand out.
+                    </p>
+                    <a
+                      href="https://gosovereign.io/wizard/preview"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      Upgrade Now
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-1">Theme Preview</h4>
+            <p className="text-sm text-blue-700">
+              After saving, the selected theme will be applied to your storefront.
+              Visit your store to see the changes in action.
             </p>
           </div>
         </div>

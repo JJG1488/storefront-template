@@ -3,5 +3,28 @@
 @tailwind utilities;
 
 :root {
+  /* Primary brand color - main accent */
   --brand-color: #6366f1;
+  --brand-color-10: rgba(99, 102, 241, 0.1);
+
+  /* Secondary accent color */
+  --secondary-color: #8b5cf6;
+
+  /* Background colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+
+  /* Text colors */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+
+  /* Border colors */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+
+  /* Footer colors */
+  --footer-bg: #111827;
+  --footer-text: #ffffff;
+  --footer-text-muted: #9ca3af;
 }
