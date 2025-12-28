@@ -191,7 +191,7 @@ Then redeploy your store for changes to take effect.
 If your store is hosted on GoSovereign's platform:
 
 1. Set up your DNS records as shown in Step 2
-2. Contact support@gosovereign.io with:
+2. Contact info@gosovereign.io with:
    - Your store subdomain (e.g., yourstore.gosovereign.io)
    - Your custom domain (e.g., yourdomain.com)
 3. We'll configure Vercel on our end
@@ -215,7 +215,7 @@ If your store is hosted on GoSovereign's platform:
 
 ## Need Help?
 
-Contact support@gosovereign.io for assistance with custom domain setup.
+Contact info@gosovereign.io for assistance with custom domain setup.
 `;
 
   const handleDownloadGuide = () => {
@@ -1012,7 +1012,7 @@ Contact support@gosovereign.io for assistance with custom domain setup.
                 </p>
                 <div className="flex items-center gap-2">
                   <a
-                    href="mailto:support@gosovereign.io?subject=Custom Domain Setup Request"
+                    href="mailto:info@gosovereign.io?subject=Custom Domain Setup Request"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity text-sm"
                   >
                     Contact Support
