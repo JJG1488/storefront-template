@@ -78,7 +78,7 @@ export function UpgradePrompt({
             </a>
 
             <a
-              href="mailto:support@gosovereign.io?subject=Upgrade%20to%20Pro"
+              href="mailto:info@gosovereign.io?subject=Upgrade%20to%20Pro"
               className="inline-flex items-center gap-2 text-amber-700 hover:text-amber-800 font-medium px-4 py-2 transition-colors"
             >
               Contact Support

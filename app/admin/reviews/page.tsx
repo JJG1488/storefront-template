@@ -57,7 +57,7 @@ export default function ReviewsAdminPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("/api/products");
+      const res = await fetch("/api/admin/products");
       const data = await res.json();
       setProducts(data.products || []);
     } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink } from "lucide-react";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
 
 interface StoreSettings {
@@ -55,7 +55,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"general" | "shipping" | "returns" | "faq" | "social">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
 
   // Load current settings from environment
   useEffect(() => {
@@ -125,7 +125,101 @@ export default function SettingsPage() {
     { id: "returns" as const, label: "Returns", icon: Truck },
     { id: "faq" as const, label: "FAQ", icon: HelpCircle },
     { id: "social" as const, label: "Social", icon: Users },
+    { id: "guides" as const, label: "Guides", icon: BookOpen },
   ];
+
+  // Custom domain documentation content
+  const customDomainGuide = `# Custom Domain Setup Guide
+
+## Overview
+This guide will help you connect your own domain (e.g., yourbrand.com) to your store.
+
+## Step 1: Purchase a Domain
+
+If you don't already own a domain, purchase one from a registrar:
+- **Namecheap** - Great value and easy DNS management
+- **Cloudflare** - Competitive pricing with free CDN
+- **Google Domains** - Simple interface (now Squarespace)
+- **GoDaddy** - Popular but often more expensive
+
+## Step 2: Configure DNS Records
+
+Log into your domain registrar and add the following DNS records:
+
+### Option A: CNAME Record (Recommended for subdomains)
+| Type  | Host | Value                  | TTL  |
+|-------|------|------------------------|------|
+| CNAME | www  | cname.vercel-dns.com   | 3600 |
+
+### Option B: A Records (For root/apex domains)
+| Type | Host | Value       | TTL  |
+|------|------|-------------|------|
+| A    | @    | 76.76.21.21 | 3600 |
+
+**Note:** DNS changes can take up to 48 hours to propagate globally.
+
+## Step 3: Add Domain to Vercel (Self-Hosted Stores)
+
+If you downloaded and self-host your store:
+
+1. Go to your Vercel project dashboard
+2. Navigate to **Settings** > **Domains**
+3. Click **Add Domain**
+4. Enter your domain name
+5. Follow the verification steps
+6. Wait for SSL certificate (usually 5-10 minutes)
+
+## Step 4: Update Environment Variables
+
+After adding your domain, update your environment variables:
+
+\`\`\`
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+\`\`\`
+
+Then redeploy your store for changes to take effect.
+
+## For Platform-Hosted Stores (Pro/Hosted Tier)
+
+If your store is hosted on GoSovereign's platform:
+
+1. Set up your DNS records as shown in Step 2
+2. Contact support@gosovereign.io with:
+   - Your store subdomain (e.g., yourstore.gosovereign.io)
+   - Your custom domain (e.g., yourdomain.com)
+3. We'll configure Vercel on our end
+4. SSL will be automatically provisioned
+
+## Troubleshooting
+
+### SSL Certificate Not Working
+- DNS changes can take up to 48 hours
+- Verify your DNS records with: \`dig yourdomain.com\`
+- Check for CAA records that might block Let's Encrypt
+
+### Domain Shows Old Site
+- Clear your browser cache
+- Try incognito/private browsing mode
+- Check TTL values (lower TTL = faster propagation)
+
+### Redirect Issues (www vs non-www)
+- Add both domains in Vercel settings
+- Configure redirect in Vercel: Settings > Domains > Edit
+
+## Need Help?
+
+Contact support@gosovereign.io for assistance with custom domain setup.
+`;
+
+  const handleDownloadGuide = () => {
+    const blob = new Blob([customDomainGuide], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "custom-domain-setup.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Helper functions for content editing
   const updateShippingMethod = (index: number, field: keyof ShippingMethod, value: string) => {
@@ -747,6 +841,78 @@ export default function SettingsPage() {
           <p className="text-sm text-gray-500">
             Social links will appear in the footer and mobile menu.
           </p>
+        </div>
+      )}
+
+      {/* Guides Tab */}
+      {activeTab === "guides" && (
+        <div className="space-y-6">
+          {/* Custom Domain Guide */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Globe className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Custom Domain Setup</h3>
+                  <p className="text-sm text-gray-500">Connect your own domain to your store</p>
+                </div>
+              </div>
+              <button
+                onClick={handleDownloadGuide}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download Guide
+              </button>
+            </div>
+
+            <div className="prose prose-sm max-w-none">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Quick Start</h4>
+                <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+                  <li>Purchase a domain from a registrar (Namecheap, Cloudflare, etc.)</li>
+                  <li>Add DNS records pointing to Vercel</li>
+                  <li>Configure the domain in your hosting dashboard</li>
+                  <li>Update your store&apos;s environment variables</li>
+                </ol>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">DNS Configuration</h4>
+                <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+                  <div className="mb-2 text-gray-400"># For www subdomain (CNAME)</div>
+                  <div>www  CNAME  cname.vercel-dns.com</div>
+                  <div className="mt-3 mb-2 text-gray-400"># For root domain (A Record)</div>
+                  <div>@    A      76.76.21.21</div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Platform-Hosted Stores</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  If your store is hosted on GoSovereign&apos;s platform, we&apos;ll handle the Vercel configuration for you.
+                </p>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="mailto:support@gosovereign.io?subject=Custom Domain Setup Request"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity text-sm"
+                  >
+                    Contact Support
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* More Guides Coming Soon */}
+          <div className="bg-gray-50 rounded-xl border border-gray-200 border-dashed p-6 text-center">
+            <BookOpen className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500">More guides coming soon</p>
+            <p className="text-sm text-gray-400 mt-1">Analytics setup, SEO optimization, and more</p>
+          </div>
         </div>
       )}
 
