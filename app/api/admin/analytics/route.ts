@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           product_id,
           product_name,
           quantity,
-          price_at_time
+          unit_price
         )
       `)
       .eq("store_id", storeId)
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     // Top products by revenue
     const productMap = new Map<string, { name: string; unitsSold: number; revenue: number }>();
     allOrders.forEach((order) => {
-      (order.order_items || []).forEach((item: { product_id: string; product_name: string; quantity: number; price_at_time: number }) => {
+      (order.order_items || []).forEach((item: { product_id: string; product_name: string; quantity: number; unit_price: number }) => {
         const existing = productMap.get(item.product_id) || {
           name: item.product_name,
           unitsSold: 0,
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
         productMap.set(item.product_id, {
           name: item.product_name,
           unitsSold: existing.unitsSold + item.quantity,
-          revenue: existing.revenue + item.price_at_time * item.quantity,
+          revenue: existing.revenue + item.unit_price * item.quantity,
         });
       });
     });
