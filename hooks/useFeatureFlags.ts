@@ -1,12 +1,14 @@
 /**
  * Feature flags hook for tier-based feature gating.
  *
- * Environment variables are set during deployment based on the store's payment tier:
- * - PAYMENT_TIER: "starter" | "pro" | "hosted"
- * - MAX_PRODUCTS: "10" | "unlimited"
- * - CUSTOM_DOMAIN_ENABLED: "true" | "false"
- * - ANALYTICS_ENABLED: "true" | "false"
- * - PREMIUM_THEMES_ENABLED: "true" | "false"
+ * Environment variables are set during deployment based on the store's payment tier.
+ * IMPORTANT: All tier env vars use NEXT_PUBLIC_ prefix to be available in client components.
+ *
+ * - NEXT_PUBLIC_PAYMENT_TIER: "starter" | "pro" | "hosted"
+ * - NEXT_PUBLIC_MAX_PRODUCTS: "10" | "unlimited"
+ * - NEXT_PUBLIC_CUSTOM_DOMAIN_ENABLED: "true" | "false"
+ * - NEXT_PUBLIC_ANALYTICS_ENABLED: "true" | "false"
+ * - NEXT_PUBLIC_PREMIUM_THEMES_ENABLED: "true" | "false"
  */
 
 export type PaymentTier = "starter" | "pro" | "hosted";
@@ -27,17 +29,17 @@ export interface FeatureFlags {
  * Safe to call on both server and client components.
  */
 export function useFeatureFlags(): FeatureFlags {
-  const tier = (process.env.PAYMENT_TIER as PaymentTier) || "starter";
-  const maxProductsEnv = process.env.MAX_PRODUCTS || "10";
+  const tier = (process.env.NEXT_PUBLIC_PAYMENT_TIER as PaymentTier) || "starter";
+  const maxProductsEnv = process.env.NEXT_PUBLIC_MAX_PRODUCTS || "10";
   const isUnlimited = maxProductsEnv === "unlimited";
 
   return {
     tier,
     maxProducts: isUnlimited ? Infinity : parseInt(maxProductsEnv, 10),
     isUnlimitedProducts: isUnlimited,
-    customDomainEnabled: process.env.CUSTOM_DOMAIN_ENABLED === "true",
-    analyticsEnabled: process.env.ANALYTICS_ENABLED === "true",
-    premiumThemesEnabled: process.env.PREMIUM_THEMES_ENABLED === "true",
+    customDomainEnabled: process.env.NEXT_PUBLIC_CUSTOM_DOMAIN_ENABLED === "true",
+    analyticsEnabled: process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true",
+    premiumThemesEnabled: process.env.NEXT_PUBLIC_PREMIUM_THEMES_ENABLED === "true",
     isPro: tier === "pro" || tier === "hosted",
     isHosted: tier === "hosted",
   };
