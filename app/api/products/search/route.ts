@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase, getStoreId, isBuildTime } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   if (isBuildTime()) {
     return NextResponse.json({ products: [] });
