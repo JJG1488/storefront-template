@@ -124,6 +124,13 @@ export async function POST(request: NextRequest): Promise<Response> {
       },
     };
 
+    // Add shipping address collection if enabled for physical goods stores
+    if (store.shippingEnabled && store.shippingCountries.length > 0) {
+      sessionParams.shipping_address_collection = {
+        allowed_countries: store.shippingCountries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
+      };
+    }
+
     // If the store has a connected Stripe account, use destination charges
     if (store.stripeAccountId) {
       sessionParams.payment_intent_data = {

@@ -11,6 +11,7 @@ export function getStoreConfig() {
     logoUrl: process.env.NEXT_PUBLIC_LOGO_URL || "",
     stripeAccountId: process.env.STRIPE_ACCOUNT_ID || "",
     shippingEnabled: process.env.SHIPPING_ENABLED === "true",
+    shippingCountries: (process.env.SHIPPING_COUNTRIES || "US").split(",").filter(Boolean),
     taxEnabled: process.env.TAX_ENABLED === "true",
     // Social links
     instagramUrl: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "",
