@@ -18,7 +18,6 @@ export interface LegalDocument {
 export function getTermsOfService(): LegalDocument {
   const store = getStoreConfig();
   const storeName = store.name || "Our Store";
-  const contactEmail = store.contactEmail || "contact@store.com";
 
   return {
     title: "Terms of Service",
@@ -67,7 +66,7 @@ export function getTermsOfService(): LegalDocument {
       },
       {
         title: "11. Contact Information",
-        content: `For questions about these terms, please contact us at ${contactEmail}.`,
+        content: `For questions about these terms, please visit our Contact page.`,
       },
     ],
   };
@@ -76,7 +75,6 @@ export function getTermsOfService(): LegalDocument {
 export function getPrivacyPolicy(): LegalDocument {
   const store = getStoreConfig();
   const storeName = store.name || "Our Store";
-  const contactEmail = store.contactEmail || "contact@store.com";
 
   return {
     title: "Privacy Policy",
@@ -109,7 +107,7 @@ export function getPrivacyPolicy(): LegalDocument {
       },
       {
         title: "7. Your Rights",
-        content: `You have the right to access, correct, or delete your personal information. You can opt out of marketing communications at any time. To exercise these rights, please contact us at ${contactEmail}.`,
+        content: `You have the right to access, correct, or delete your personal information. You can opt out of marketing communications at any time. To exercise these rights, please visit our Contact page.`,
       },
       {
         title: "8. Security",
@@ -129,7 +127,7 @@ export function getPrivacyPolicy(): LegalDocument {
       },
       {
         title: "12. Contact Us",
-        content: `For privacy-related questions, please contact us at ${contactEmail}.`,
+        content: `For privacy-related questions, please visit our Contact page.`,
       },
     ],
   };
