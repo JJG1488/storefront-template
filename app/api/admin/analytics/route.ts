@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 interface DailyData {
   date: string;
   revenue: number;
