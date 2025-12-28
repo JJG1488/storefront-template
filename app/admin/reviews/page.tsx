@@ -57,8 +57,9 @@ export default function ReviewsAdminPage() {
 
   const fetchProducts = async () => {
     try {
+      const token = localStorage.getItem("admin_token");
       const res = await fetch("/api/admin/products", {
-        credentials: "include",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setProducts(data.products || []);
