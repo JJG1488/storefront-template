@@ -60,7 +60,112 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"general" | "appearance" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "appearance" | "domain" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
+
+  // Domain-specific state
+  const [domainLoading, setDomainLoading] = useState(true);
+  const [domainSaving, setDomainSaving] = useState(false);
+  const [domainData, setDomainData] = useState<{
+    subdomain: string;
+    subdomainUrl: string;
+    customDomain: string | null;
+    status: "none" | "pending" | "configured" | "error";
+    message?: string;
+  } | null>(null);
+  const [customDomainInput, setCustomDomainInput] = useState("");
+
+  // Load domain configuration
+  useEffect(() => {
+    const loadDomain = async () => {
+      if (activeTab !== "domain" || !flags.customDomainEnabled) return;
+
+      setDomainLoading(true);
+      try {
+        const token = localStorage.getItem("admin_token");
+        const res = await fetch("/api/admin/domain", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDomainData(data);
+          setCustomDomainInput(data.customDomain || "");
+        }
+      } catch (err) {
+        console.error("Failed to load domain config:", err);
+      }
+      setDomainLoading(false);
+    };
+    loadDomain();
+  }, [activeTab, flags.customDomainEnabled]);
+
+  // Save custom domain
+  const handleSaveDomain = async () => {
+    setDomainSaving(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/admin/domain", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customDomain: customDomainInput.trim() || null }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setDomainData((prev) =>
+          prev
+            ? {
+                ...prev,
+                customDomain: customDomainInput.trim() || null,
+                status: customDomainInput.trim() ? "pending" : "none",
+                message: data.message,
+              }
+            : null
+        );
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        setError(data.error || "Failed to save domain");
+      }
+    } catch (err) {
+      console.error("Failed to save domain:", err);
+      setError("Failed to save domain. Please try again.");
+    }
+    setDomainSaving(false);
+  };
+
+  // Remove custom domain
+  const handleRemoveDomain = async () => {
+    setDomainSaving(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/admin/domain", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setDomainData((prev) =>
+          prev ? { ...prev, customDomain: null, status: "none", message: undefined } : null
+        );
+        setCustomDomainInput("");
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to remove domain");
+      }
+    } catch (err) {
+      console.error("Failed to remove domain:", err);
+      setError("Failed to remove domain. Please try again.");
+    }
+    setDomainSaving(false);
+  };
 
   // Load current settings from environment
   useEffect(() => {
@@ -128,6 +233,10 @@ export default function SettingsPage() {
   const tabs = [
     { id: "general" as const, label: "General", icon: Store },
     { id: "appearance" as const, label: "Appearance", icon: Palette },
+    // Domain tab only shown for Pro/Hosted tiers
+    ...(flags.customDomainEnabled
+      ? [{ id: "domain" as const, label: "Domain", icon: Globe }]
+      : []),
     { id: "shipping" as const, label: "Shipping", icon: Truck },
     { id: "returns" as const, label: "Returns", icon: Truck },
     { id: "faq" as const, label: "FAQ", icon: HelpCircle },
@@ -613,6 +722,165 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               After saving, the selected theme will be applied to your storefront.
               Visit your store to see the changes in action.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Domain Tab (Pro/Hosted only) */}
+      {activeTab === "domain" && flags.customDomainEnabled && (
+        <div className="space-y-6">
+          {/* Current Domain Status */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Globe className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Domain Settings</h3>
+                <p className="text-sm text-gray-500">Connect a custom domain to your store</p>
+              </div>
+            </div>
+
+            {domainLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Current Subdomain */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Store URL
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-mono text-sm">
+                      {domainData?.subdomainUrl || "Loading..."}
+                    </div>
+                    <a
+                      href={domainData?.subdomainUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-gray-500 hover:text-brand transition-colors"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Custom Domain Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Domain
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={customDomainInput}
+                      onChange={(e) => setCustomDomainInput(e.target.value.toLowerCase())}
+                      placeholder="shop.yourdomain.com"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
+                    />
+                    <button
+                      onClick={handleSaveDomain}
+                      disabled={domainSaving || customDomainInput === (domainData?.customDomain || "")}
+                      className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {domainSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Saving...
+                        </>
+                      ) : saved ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Saved
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Save
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Enter your domain without https:// (e.g., shop.example.com or example.com)
+                  </p>
+                </div>
+
+                {/* Domain Status */}
+                {domainData?.customDomain && (
+                  <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                      <div>
+                        <p className="font-medium text-amber-900">
+                          {domainData.customDomain}
+                        </p>
+                        <p className="text-sm text-amber-700">
+                          {domainData.message || "Pending configuration"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleRemoveDomain}
+                      disabled={domainSaving}
+                      className="p-2 text-amber-600 hover:text-red-600 transition-colors"
+                      title="Remove custom domain"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* DNS Instructions */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h4 className="font-semibold text-gray-900 mb-4">DNS Configuration</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Add the following DNS records at your domain registrar:
+            </p>
+
+            <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm overflow-x-auto mb-4">
+              <div className="mb-2 text-gray-400"># For subdomains (www, shop, etc.) - CNAME Record</div>
+              <div className="mb-3">
+                <span className="text-green-400">Type:</span> CNAME &nbsp;
+                <span className="text-green-400">Host:</span> www &nbsp;
+                <span className="text-green-400">Value:</span> cname.vercel-dns.com
+              </div>
+              <div className="mb-2 text-gray-400"># For root/apex domain (@) - A Record</div>
+              <div>
+                <span className="text-green-400">Type:</span> A &nbsp;
+                <span className="text-green-400">Host:</span> @ &nbsp;
+                <span className="text-green-400">Value:</span> 76.76.21.21
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm text-gray-600">
+              <HelpCircle className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <p>
+                DNS changes can take up to 48 hours to propagate. After configuring your DNS,
+                contact <a href="mailto:info@gosovereign.io" className="text-brand hover:underline">info@gosovereign.io</a> to
+                complete the domain setup.
+              </p>
+            </div>
+          </div>
+
+          {/* Download Guide */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-5 h-5 text-gray-400" />
+              <span className="text-sm text-gray-600">Need more detailed instructions?</span>
+            </div>
+            <button
+              onClick={handleDownloadGuide}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              Download Guide
+            </button>
           </div>
         </div>
       )}
