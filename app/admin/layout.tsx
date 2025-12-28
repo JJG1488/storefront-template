@@ -75,6 +75,7 @@ function AdminNav({ onLogout }: { onLogout: () => void }) {
     { href: "/admin/products", label: "Products" },
     { href: "/admin/orders", label: "Orders" },
     { href: "/admin/reviews", label: "Reviews" },
+    { href: "/admin/analytics", label: "Analytics" },
     { href: "/admin/settings", label: "Settings" },
   ];
 
