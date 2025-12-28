@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/components/CartContext";
+import { WishlistProvider } from "@/components/WishlistContext";
 import { getStoreConfig } from "@/lib/store";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -34,9 +35,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <CartProvider>
-          <Header />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
+          <WishlistProvider>
+            <Header />
+            <main className="min-h-screen">{children}</main>
+            <Footer />
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

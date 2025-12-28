@@ -6,6 +6,7 @@ import { Heart, ShoppingBag, Eye } from "lucide-react";
 import type { Product } from "@/data/products";
 import { formatPrice } from "@/data/products";
 import { useCart } from "./CartContext";
+import { useWishlist } from "./WishlistContext";
 
 interface Props {
   product: Product;
@@ -14,7 +15,8 @@ interface Props {
 
 export function ProductCard({ product, showQuickAdd = true }: Props) {
   const { addItem, items } = useCart();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { isInWishlist, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id);
   const [imageHovered, setImageHovered] = useState(false);
 
   // Check how many of this product are already in cart
@@ -41,8 +43,11 @@ export function ProductCard({ product, showQuickAdd = true }: Props) {
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    // TODO: Persist to localStorage or backend
+    if (isWishlisted) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product);
+    }
   };
 
   return (
