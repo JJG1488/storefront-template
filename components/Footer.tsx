@@ -93,7 +93,7 @@ export function Footer() {
               <img
                 src={store.logoUrl}
                 alt={store.name}
-                className="h-10 mb-4 brightness-0 invert"
+                className="h-10 mb-4 brightness-0"
               />
             ) : (
               <h3 className="text-xl font-bold mb-4">{store.name}</h3>
