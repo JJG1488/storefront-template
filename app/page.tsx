@@ -1,5 +1,6 @@
 import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
+import { Testimonials } from "@/components/Testimonials";
 import { getProducts } from "@/data/products";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function HomePage() {
           <ProductGrid products={products} />
         </div>
       </section>
+      <Testimonials />
     </>
   );
 }
