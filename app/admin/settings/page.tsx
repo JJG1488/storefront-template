@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload } from "lucide-react";
+import { VideoUpload } from "@/components/VideoUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
+
+interface VideoBannerSettings {
+  enabled: boolean;
+  type: "youtube" | "upload";
+  youtubeUrl: string;
+  uploadedUrl: string;
+}
 
 interface StoreSettings {
   name: string;
@@ -19,6 +27,8 @@ interface StoreSettings {
   twitterUrl: string;
   tiktokUrl: string;
   themePreset: string;
+  // Video banner settings
+  videoBanner?: VideoBannerSettings;
   // Content settings
   content?: {
     shipping?: {
@@ -51,6 +61,12 @@ export default function SettingsPage() {
     twitterUrl: "",
     tiktokUrl: "",
     themePreset: "default",
+    videoBanner: {
+      enabled: false,
+      type: "youtube",
+      youtubeUrl: "",
+      uploadedUrl: "",
+    },
     content: {
       shipping: defaultContent.shipping,
       returns: defaultContent.returns,
@@ -184,6 +200,12 @@ export default function SettingsPage() {
             ...prev,
             ...data.settings,
             themePreset: data.settings?.themePreset || "default",
+            videoBanner: {
+              enabled: data.settings?.videoBanner?.enabled ?? false,
+              type: data.settings?.videoBanner?.type || "youtube",
+              youtubeUrl: data.settings?.videoBanner?.youtubeUrl || "",
+              uploadedUrl: data.settings?.videoBanner?.uploadedUrl || "",
+            },
             content: {
               shipping: data.settings?.content?.shipping || defaultContent.shipping,
               returns: data.settings?.content?.returns || defaultContent.returns,
@@ -722,6 +744,141 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               After saving, the selected theme will be applied to your storefront.
               Visit your store to see the changes in action.
             </p>
+          </div>
+
+          {/* Video Banner Section */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Video className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Video Banner</h3>
+                  <p className="text-sm text-gray-500">Add a video banner below the header</p>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.videoBanner?.enabled || false}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      videoBanner: {
+                        ...settings.videoBanner!,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="w-5 h-5 rounded border-gray-300 text-brand focus:ring-brand"
+                />
+                <span className="text-sm font-medium text-gray-700">Enable</span>
+              </label>
+            </div>
+
+            {settings.videoBanner?.enabled && (
+              <div className="space-y-6">
+                {/* Video Source Toggle */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Video Source
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, type: "youtube" },
+                        })
+                      }
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                        settings.videoBanner?.type === "youtube"
+                          ? "border-brand bg-brand/5 text-brand"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <Youtube className="w-5 h-5" />
+                      YouTube URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, type: "upload" },
+                        })
+                      }
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                        settings.videoBanner?.type === "upload"
+                          ? "border-brand bg-brand/5 text-brand"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <Upload className="w-5 h-5" />
+                      Upload Video
+                    </button>
+                  </div>
+                </div>
+
+                {/* YouTube URL Input */}
+                {settings.videoBanner?.type === "youtube" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      YouTube URL
+                    </label>
+                    <input
+                      type="url"
+                      value={settings.videoBanner?.youtubeUrl || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, youtubeUrl: e.target.value },
+                        })
+                      }
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                    />
+                    <p className="mt-1.5 text-sm text-gray-500">
+                      Supports youtube.com/watch, youtu.be, and youtube.com/shorts URLs
+                    </p>
+                  </div>
+                )}
+
+                {/* Video Upload */}
+                {settings.videoBanner?.type === "upload" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Video
+                    </label>
+                    <VideoUpload
+                      value={settings.videoBanner?.uploadedUrl || ""}
+                      onChange={(url) =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, uploadedUrl: url },
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Recommendation Note */}
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Video className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-purple-900">Recommendation</p>
+                      <p className="text-sm text-purple-700 mt-1">
+                        Use short clips (5-10 seconds) for best performance. Videos will autoplay
+                        muted and loop continuously below your header.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

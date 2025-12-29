@@ -1,16 +1,22 @@
 import { Hero } from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Testimonials } from "@/components/Testimonials";
+import { VideoBanner } from "@/components/VideoBanner";
 import { getProducts } from "@/data/products";
+import { getVideoBannerSettings } from "@/lib/video-banner";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const products = await getProducts();
+  const [products, videoBannerSettings] = await Promise.all([
+    getProducts(),
+    getVideoBannerSettings(),
+  ]);
 
   return (
     <>
+      <VideoBanner {...videoBannerSettings} />
       <Hero />
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
