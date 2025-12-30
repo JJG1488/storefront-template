@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getStoreConfig } from "@/lib/store";
 import { Instagram, Facebook, Twitter, Mail, CreditCard, Shield } from "lucide-react";
+import type { RuntimeSettings } from "@/lib/settings";
 
 // Payment method icons as simple SVG components
 function VisaIcon() {
@@ -50,7 +51,11 @@ function ApplePayIcon() {
   );
 }
 
-export function Footer() {
+interface FooterProps {
+  settings: RuntimeSettings;
+}
+
+export function Footer({ settings }: FooterProps) {
   const store = getStoreConfig();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -83,7 +88,8 @@ export function Footer() {
     setLoading(false);
   };
 
-  const hasSocialLinks = store.instagramUrl || store.facebookUrl || store.twitterUrl || store.tiktokUrl;
+  // Use runtime settings for social links
+  const hasSocialLinks = settings.instagramUrl || settings.facebookUrl || settings.twitterUrl || settings.tiktokUrl;
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -92,26 +98,26 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            {store.logoUrl ? (
+            {settings.logoUrl ? (
               <img
-                src={store.logoUrl}
+                src={settings.logoUrl}
                 alt={store.name}
                 className="h-10 mb-4"
               />
             ) : (
               <h3 className="text-xl font-bold mb-4">{store.name}</h3>
             )}
-            {store.aboutText && (
+            {settings.aboutText && (
               <p className="text-gray-400 text-sm mb-4 line-clamp-3">
-                {store.aboutText}
+                {settings.aboutText}
               </p>
             )}
             {/* Social Links */}
             {hasSocialLinks && (
               <div className="flex gap-4 mt-4">
-                {store.instagramUrl && (
+                {settings.instagramUrl && (
                   <a
-                    href={store.instagramUrl}
+                    href={settings.instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-white transition-colors"
@@ -120,9 +126,9 @@ export function Footer() {
                     <Instagram className="w-5 h-5" />
                   </a>
                 )}
-                {store.facebookUrl && (
+                {settings.facebookUrl && (
                   <a
-                    href={store.facebookUrl}
+                    href={settings.facebookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-white transition-colors"
@@ -131,9 +137,9 @@ export function Footer() {
                     <Facebook className="w-5 h-5" />
                   </a>
                 )}
-                {store.twitterUrl && (
+                {settings.twitterUrl && (
                   <a
-                    href={store.twitterUrl}
+                    href={settings.twitterUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-white transition-colors"

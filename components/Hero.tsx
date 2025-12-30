@@ -1,16 +1,21 @@
 import { getStoreConfig } from "@/lib/store";
 import { TrustBadges } from "./TrustBadges";
 import { Truck, Shield, RotateCcw } from "lucide-react";
+import type { RuntimeSettings } from "@/lib/settings";
 
-export function Hero() {
+interface HeroProps {
+  settings: RuntimeSettings;
+}
+
+export function Hero({ settings }: HeroProps) {
   const store = getStoreConfig();
 
-  // Build dynamic trust badges based on store config
+  // Build dynamic trust badges based on runtime settings
   const trustBadges = [
     {
       icon: <Truck className="w-6 h-6" />,
       title: "Free Shipping",
-      description: store.shippingPromise || "On orders over $50",
+      description: settings.shippingPromise || "On orders over $50",
     },
     {
       icon: <Shield className="w-6 h-6" />,
@@ -20,7 +25,7 @@ export function Hero() {
     {
       icon: <RotateCcw className="w-6 h-6" />,
       title: "Easy Returns",
-      description: store.returnPolicy || "30-day return policy",
+      description: settings.returnPolicy || "30-day return policy",
     },
   ];
 
@@ -32,9 +37,9 @@ export function Hero() {
         style={{ backgroundColor: `${store.primaryColor}08` }}
       >
         <div className="max-w-4xl mx-auto">
-          {store.tagline ? (
+          {settings.tagline ? (
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              {store.tagline}
+              {settings.tagline}
             </p>
           ) : (
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">

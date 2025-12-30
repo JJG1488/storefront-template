@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, Home, ShoppingBag, Search, Heart, User, ChevronRight, Instagram, Facebook, Twitter } from "lucide-react";
 import { getStoreConfig } from "@/lib/store";
+import type { RuntimeSettings } from "@/lib/settings";
 
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onSearchClick?: () => void;
+  settings: RuntimeSettings;
 }
 
-export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) {
+export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileMenuProps) {
   const store = getStoreConfig();
 
   // Prevent body scroll when menu is open
@@ -38,7 +40,8 @@ export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) 
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  const hasSocialLinks = store.instagramUrl || store.facebookUrl || store.twitterUrl;
+  // Use runtime settings for social links
+  const hasSocialLinks = settings.instagramUrl || settings.facebookUrl || settings.twitterUrl;
 
   const mainLinks = [
     { href: "/", label: "Home", icon: Home },
@@ -72,8 +75,8 @@ export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <Link href="/" onClick={onClose} className="flex items-center gap-2">
-              {store.logoUrl ? (
-                <img src={store.logoUrl} alt={store.name} className="h-8" />
+              {settings.logoUrl ? (
+                <img src={settings.logoUrl} alt={store.name} className="h-8" />
               ) : (
                 <span className="text-lg font-bold">{store.name}</span>
               )}
@@ -172,9 +175,9 @@ export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) 
             {/* Social Links */}
             {hasSocialLinks && (
               <div className="flex justify-center gap-4 mb-4">
-                {store.instagramUrl && (
+                {settings.instagramUrl && (
                   <a
-                    href={store.instagramUrl}
+                    href={settings.instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
@@ -182,9 +185,9 @@ export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) 
                     <Instagram className="w-5 h-5" />
                   </a>
                 )}
-                {store.facebookUrl && (
+                {settings.facebookUrl && (
                   <a
-                    href={store.facebookUrl}
+                    href={settings.facebookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
@@ -192,9 +195,9 @@ export function MobileMenu({ isOpen, onClose, onSearchClick }: MobileMenuProps) 
                     <Facebook className="w-5 h-5" />
                   </a>
                 )}
-                {store.twitterUrl && (
+                {settings.twitterUrl && (
                   <a
-                    href={store.twitterUrl}
+                    href={settings.twitterUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"

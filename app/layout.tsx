@@ -7,7 +7,7 @@ import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { getStoreConfig } from "@/lib/store";
 import { getThemeById, generateThemeCSS } from "@/lib/themes";
-import { getThemePresetFromDB } from "@/lib/settings";
+import { getStoreSettingsFromDB } from "@/lib/settings";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,9 +25,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const store = getStoreConfig();
-  // Fetch theme from database at runtime (falls back to env var)
-  const themePreset = await getThemePresetFromDB();
-  const theme = getThemeById(themePreset);
+  // Fetch all runtime settings from database (falls back to env vars)
+  const settings = await getStoreSettingsFromDB();
+  const theme = getThemeById(settings.themePreset);
   const themeCSS = generateThemeCSS(theme);
 
   return (
@@ -42,9 +42,9 @@ export default async function RootLayout({
       <body className={inter.className}>
         <CartProvider>
           <WishlistProvider>
-            <Header />
+            <Header settings={settings} />
             <main className="min-h-screen">{children}</main>
-            <Footer />
+            <Footer settings={settings} />
           </WishlistProvider>
         </CartProvider>
       </body>

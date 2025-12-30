@@ -7,8 +7,13 @@ import { CartIcon } from "./CartIcon";
 import { getStoreConfig } from "@/lib/store";
 import { MobileMenu, MenuButton } from "./MobileMenu";
 import { SearchModal } from "./SearchModal";
+import type { RuntimeSettings } from "@/lib/settings";
 
-export function Header() {
+interface HeaderProps {
+  settings: RuntimeSettings;
+}
+
+export function Header({ settings }: HeaderProps) {
   const store = getStoreConfig();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -28,10 +33,10 @@ export function Header() {
 
   return (
     <>
-      {/* Announcement Bar */}
-      {store.announcementBar && (
+      {/* Announcement Bar - reads from runtime settings */}
+      {settings.announcementBar && (
         <div className="bg-brand text-white text-center py-2 px-4 text-sm">
-          {store.announcementBar}
+          {settings.announcementBar}
         </div>
       )}
 
@@ -157,6 +162,7 @@ export function Header() {
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         onSearchClick={() => setSearchOpen(true)}
+        settings={settings}
       />
 
       {/* Search Modal */}
