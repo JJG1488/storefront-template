@@ -9,6 +9,9 @@ import { getStoreConfig } from "@/lib/store";
 import { getThemeById, generateThemeCSS } from "@/lib/themes";
 import { getStoreSettingsFromDB } from "@/lib/settings";
 
+// Force dynamic rendering so settings changes appear for all visitors
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
