@@ -56,7 +56,7 @@ export function Header() {
             >
               {store.name}
             </Link>
-            {store.logoUrl && (
+            {/* {store.logoUrl && (
               <Link href="/" className="flex items-center w-5.5 left-5.5">
                 <img
                   src={store.logoUrl}
@@ -64,7 +64,7 @@ export function Header() {
                   className="h-8 object-contain rounded-lg"
                 />
               </Link>
-              )}
+              )} */}
             </div>
 
             {/* Right: Actions */}
@@ -84,7 +84,7 @@ export function Header() {
           <div className="hidden lg:flex items-center justify-between gap-4">
             {/* Left: Menu + Logo */}
             <div className="flex items-center gap-3">
-              {store.logoUrl && (
+              {/* {store.logoUrl && (
                 <Link href="/" className="flex items-center">
                   <img
                     src={store.logoUrl}
@@ -92,7 +92,7 @@ export function Header() {
                     className="h-10 object-contain rounded-lg"
                   />
                 </Link>
-              )}
+              )} */}
             </div>
 
             {/* Desktop Navigation */}
