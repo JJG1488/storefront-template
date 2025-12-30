@@ -196,6 +196,7 @@ export default function SettingsPage() {
         const token = localStorage.getItem("admin_token");
         const res = await fetch("/api/admin/settings", {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",  // Always get fresh data
         });
         if (res.ok) {
           const data = await res.json();

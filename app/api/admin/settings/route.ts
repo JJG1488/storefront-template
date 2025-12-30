@@ -3,14 +3,24 @@ import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
 import { getStoreConfig } from "@/lib/store";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 
+// Prevent caching - settings must always be fresh
+export const dynamic = "force-dynamic";
+
+// Helper to add no-cache headers
+function jsonResponseNoCache(data: object, status = 200) {
+  const response = NextResponse.json(data, { status });
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  return response;
+}
+
 // GET - Fetch current settings
 export async function GET(request: NextRequest) {
   if (isBuildTime()) {
-    return NextResponse.json({ settings: {} });
+    return jsonResponseNoCache({ settings: {} });
   }
 
   if (!(await verifyAuthFromRequest(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponseNoCache({ error: "Unauthorized" }, 401);
   }
 
   try {
@@ -21,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (!supabase || !storeId) {
       // Fall back to environment variables
       const config = getStoreConfig();
-      return NextResponse.json({
+      return jsonResponseNoCache({
         settings: {
           name: config.name,
           tagline: config.tagline,
@@ -47,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (error || !data) {
       // Fall back to environment variables if no settings in DB
       const config = getStoreConfig();
-      return NextResponse.json({
+      return jsonResponseNoCache({
         settings: {
           name: config.name,
           tagline: config.tagline,
@@ -64,21 +74,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Merge DB settings with env var defaults
-    // Use ?? for fields where empty string is valid (user intentionally cleared)
-    // Use || for fields that should never be empty (need fallback)
+    // Use || so empty strings fall back to env var defaults
     const config = getStoreConfig();
-    return NextResponse.json({
+    return jsonResponseNoCache({
       settings: {
-        name: data.settings?.name ?? config.name,
-        tagline: data.settings?.tagline ?? config.tagline,
-        aboutText: data.settings?.aboutText ?? config.aboutText,
-        announcementBar: data.settings?.announcementBar ?? config.announcementBar,
+        name: data.settings?.name || config.name,
+        tagline: data.settings?.tagline || config.tagline,
+        aboutText: data.settings?.aboutText || config.aboutText,
+        announcementBar: data.settings?.announcementBar || config.announcementBar,
         shippingPromise: data.settings?.shippingPromise || config.shippingPromise,
         returnPolicy: data.settings?.returnPolicy || config.returnPolicy,
-        instagramUrl: data.settings?.instagramUrl ?? config.instagramUrl,
-        facebookUrl: data.settings?.facebookUrl ?? config.facebookUrl,
-        twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
-        tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
+        instagramUrl: data.settings?.instagramUrl || config.instagramUrl,
+        facebookUrl: data.settings?.facebookUrl || config.facebookUrl,
+        twitterUrl: data.settings?.twitterUrl || config.twitterUrl,
+        tiktokUrl: data.settings?.tiktokUrl || config.tiktokUrl,
         themePreset: data.settings?.themePreset || config.themePreset || "default",
         videoBanner: data.settings?.videoBanner || null,
         content: data.settings?.content || null,
@@ -86,10 +95,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return jsonResponseNoCache({ error: "Failed to fetch settings" }, 500);
   }
 }
 
