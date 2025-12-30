@@ -47,3 +47,14 @@ export function getSupabaseAdmin(): SupabaseClient | null {
 export function getStoreId(): string {
   return process.env.NEXT_PUBLIC_STORE_ID || "";
 }
+
+// Create a fresh admin client (no caching) - use when stale data is a problem
+export function createFreshAdminClient(): SupabaseClient | null {
+  if (isBuildTime()) {
+    return null;
+  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  return createClient(supabaseUrl, key);
+}

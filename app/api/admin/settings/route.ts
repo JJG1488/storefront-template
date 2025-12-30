@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
+import { createFreshAdminClient, getStoreId, isBuildTime } from "@/lib/supabase";
 import { getStoreConfig } from "@/lib/store";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 
@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
 
   try {
     // First, try to get settings from the database
-    const supabase = getSupabaseAdmin();
+    // Use fresh client to avoid stale cached data
+    const supabase = createFreshAdminClient();
     const storeId = getStoreId();
 
     if (!supabase || !storeId) {
@@ -139,7 +140,8 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
+    // Use fresh client to avoid stale cached data
+    const supabase = createFreshAdminClient();
     const storeId = getStoreId();
 
     if (!supabase || !storeId) {
