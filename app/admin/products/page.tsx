@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ProductLimitPrompt } from "@/components/UpgradePrompt";
 
 interface Product {
@@ -27,6 +27,7 @@ export default function ProductsPage() {
   const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const filter = searchParams.get("filter");
 
   useEffect(() => {
@@ -147,7 +148,11 @@ export default function ProductsPage() {
             </thead>
             <tbody className="divide-y">
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
+                <tr
+                  key={product.id}
+                  onClick={() => router.push(`/admin/products/${product.id}`)}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {product.images?.[0]?.url ? (
