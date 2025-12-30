@@ -74,20 +74,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Merge DB settings with env var defaults
-    // Use || so empty strings fall back to env var defaults
+    // Use ?? for optional text fields to preserve actual saved values (including empty strings)
+    // Use || for required fields that should always have a value
     const config = getStoreConfig();
     return jsonResponseNoCache({
       settings: {
         name: data.settings?.name || config.name,
-        tagline: data.settings?.tagline || config.tagline,
-        aboutText: data.settings?.aboutText || config.aboutText,
-        announcementBar: data.settings?.announcementBar || config.announcementBar,
+        tagline: data.settings?.tagline ?? config.tagline,
+        aboutText: data.settings?.aboutText ?? config.aboutText,
+        announcementBar: data.settings?.announcementBar ?? config.announcementBar,
         shippingPromise: data.settings?.shippingPromise || config.shippingPromise,
         returnPolicy: data.settings?.returnPolicy || config.returnPolicy,
-        instagramUrl: data.settings?.instagramUrl || config.instagramUrl,
-        facebookUrl: data.settings?.facebookUrl || config.facebookUrl,
-        twitterUrl: data.settings?.twitterUrl || config.twitterUrl,
-        tiktokUrl: data.settings?.tiktokUrl || config.tiktokUrl,
+        instagramUrl: data.settings?.instagramUrl ?? config.instagramUrl,
+        facebookUrl: data.settings?.facebookUrl ?? config.facebookUrl,
+        twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
+        tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
         themePreset: data.settings?.themePreset || config.themePreset || "default",
         videoBanner: data.settings?.videoBanner || null,
         content: data.settings?.content || null,
