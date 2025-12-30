@@ -59,7 +59,7 @@ export function Header() {
             {/* Center: Store Name */}
             <Link
               href="/"
-              className="justify-self-center text-base text-transform:uppercase sm:text-lg font-bold text-gray-900 hover:text-gray-700 transition-colors truncate max-w-full text-center"
+              className="justify-self-center text-base sm:text-lg font-bold text-gray-900 hover:text-gray-700 transition-colors truncate max-w-full text-center uppercase"
             >
               {store.name}
             </Link>
@@ -117,7 +117,7 @@ export function Header() {
             {/* Center: Store Name */}
             <Link
               href="/"
-              className="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors"
+              className="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors uppercase"
             >
               {store.name}
             </Link>
