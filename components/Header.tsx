@@ -45,24 +45,27 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(true)}
                 isOpen={mobileMenuOpen}
               />
-              {store.logoUrl && (
-                <Link href="/" className="flex items-center">
-                  <img
-                    src={store.logoUrl}
-                    alt={store.name}
-                    className="h-8 object-contain rounded-lg"
-                  />
-                </Link>
-              )}
+              
             </div>
 
             {/* Center: Store Name */}
+            <div className="flex items-center gap-2">
             <Link
               href="/"
               className="justify-self-center text-base sm:text-lg font-bold text-gray-900 hover:text-gray-700 transition-colors truncate max-w-full text-center uppercase"
             >
               {store.name}
             </Link>
+            {store.logoUrl && (
+              <Link href="/" className="flex items-center w-0.5 left-0.5">
+                <img
+                  src={store.logoUrl}
+                  alt={store.name}
+                  className="h-8 object-contain rounded-lg"
+                />
+              </Link>
+              )}
+            </div>
 
             {/* Right: Actions */}
             <div className="flex items-center justify-end gap-1">
