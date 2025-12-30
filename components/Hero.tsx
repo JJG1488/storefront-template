@@ -62,7 +62,7 @@ export function Hero() {
               </svg>
             </a>
             <a
-              href="#featured"
+              href="#products"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-brand hover:text-brand transition-all font-medium"
             >
               View Featured
