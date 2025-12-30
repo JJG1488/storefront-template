@@ -7,6 +7,7 @@ import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { getStoreConfig } from "@/lib/store";
 import { getThemeById, generateThemeCSS } from "@/lib/themes";
+import { getThemePresetFromDB } from "@/lib/settings";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,13 +19,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const store = getStoreConfig();
-  const theme = getThemeById(store.themePreset);
+  // Fetch theme from database at runtime (falls back to env var)
+  const themePreset = await getThemePresetFromDB();
+  const theme = getThemeById(themePreset);
   const themeCSS = generateThemeCSS(theme);
 
   return (
