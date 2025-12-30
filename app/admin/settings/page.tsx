@@ -528,7 +528,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 w-full sm:w-auto"
         >
           {saved ? (
             <>
@@ -1122,7 +1122,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
             </div>
             <button
               onClick={handleDownloadGuide}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm w-full sm:w-auto"
             >
               <Download className="w-4 h-4" />
               Download Guide
@@ -1367,7 +1367,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
             </div>
             <button
               onClick={addFAQ}
-              className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               Add Question
@@ -1491,7 +1491,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               </div>
               <button
                 onClick={handleDownloadGuide}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" />
                 Download Guide
