@@ -838,7 +838,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Video Source
                   </label>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
                       onClick={() =>
