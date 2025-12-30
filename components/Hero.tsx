@@ -1,6 +1,4 @@
 import { getStoreConfig } from "@/lib/store";
-import { TrustBadges } from "./TrustBadges";
-import { Truck, Shield, RotateCcw } from "lucide-react";
 import type { RuntimeSettings } from "@/lib/settings";
 
 interface HeroProps {
@@ -9,25 +7,6 @@ interface HeroProps {
 
 export function Hero({ settings }: HeroProps) {
   const store = getStoreConfig();
-
-  // Build dynamic trust badges based on runtime settings
-  const trustBadges = [
-    {
-      icon: <Truck className="w-6 h-6" />,
-      title: "Free Shipping",
-      description: settings.shippingPromise || "On orders over $50",
-    },
-    {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Secure Checkout",
-      description: "SSL encrypted payment",
-    },
-    {
-      icon: <RotateCcw className="w-6 h-6" />,
-      title: "Easy Returns",
-      description: settings.returnPolicy || "30-day return policy",
-    },
-  ];
 
   return (
     <section className="relative">
@@ -73,13 +52,6 @@ export function Hero({ settings }: HeroProps) {
               View Featured
             </a>
           </div>
-        </div>
-      </div>
-
-      {/* Trust Badges Section */}
-      <div className="bg-white py-8 px-4 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto">
-          <TrustBadges badges={trustBadges} variant="horizontal" />
         </div>
       </div>
     </section>
