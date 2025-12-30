@@ -61,11 +61,13 @@ export async function GET(request: NextRequest) {
     console.log("[Settings GET] Looking for storeId:", storeId);
 
     // Try to get settings from store_settings table
-    const { data, error } = await supabase
+    // Use .limit(1) instead of .single() to avoid potential caching issues
+    const { data: rows, error } = await supabase
       .from("store_settings")
       .select("*")
       .eq("store_id", storeId)
-      .single();
+      .limit(1);
+    const data = rows?.[0] || null;
 
     // Debug logging - check Vercel function logs
     console.log("[Settings GET] storeId:", storeId);
