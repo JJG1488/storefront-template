@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image, ChevronDown } from "lucide-react";
 import { VideoUpload } from "@/components/VideoUpload";
 import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
@@ -80,6 +80,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"general" | "appearance" | "domain" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
+  const [mobileTabsOpen, setMobileTabsOpen] = useState(false);
 
   // Domain-specific state
   const [domainLoading, setDomainLoading] = useState(true);
@@ -543,8 +544,57 @@ Contact info@gosovereign.io for assistance with custom domain setup.
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      {/* Mobile Tab Selector */}
+      <div className="md:hidden mb-6">
+        <button
+          onClick={() => setMobileTabsOpen(!mobileTabsOpen)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-sm"
+        >
+          <span className="flex items-center gap-2 font-medium text-gray-900">
+            {(() => {
+              const currentTab = tabs.find((t) => t.id === activeTab);
+              if (!currentTab) return null;
+              const Icon = currentTab.icon;
+              return (
+                <>
+                  <Icon className="w-4 h-4" />
+                  {currentTab.label}
+                </>
+              );
+            })()}
+          </span>
+          <ChevronDown
+            className={`w-5 h-5 text-gray-500 transition-transform ${
+              mobileTabsOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {mobileTabsOpen && (
+          <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMobileTabsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-brand/10 text-brand font-medium"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Tabs */}
+      <div className="hidden md:flex gap-2 mb-6 border-b border-gray-200">
         {tabs.map((tab) => (
           <button
             key={tab.id}
