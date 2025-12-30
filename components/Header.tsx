@@ -57,7 +57,7 @@ export function Header() {
               {store.name}
             </Link>
             {store.logoUrl && (
-              <Link href="/" className="flex items-center w-0.5 left-0.5">
+              <Link href="/" className="flex items-center w-5.5 left-5.5">
                 <img
                   src={store.logoUrl}
                   alt={store.name}
