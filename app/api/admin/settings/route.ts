@@ -63,7 +63,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ settings: data.settings });
+    // Merge DB settings with env var defaults
+    // Use ?? for fields where empty string is valid (user intentionally cleared)
+    // Use || for fields that should never be empty (need fallback)
+    const config = getStoreConfig();
+    return NextResponse.json({
+      settings: {
+        name: data.settings?.name ?? config.name,
+        tagline: data.settings?.tagline ?? config.tagline,
+        aboutText: data.settings?.aboutText ?? config.aboutText,
+        announcementBar: data.settings?.announcementBar ?? config.announcementBar,
+        shippingPromise: data.settings?.shippingPromise || config.shippingPromise,
+        returnPolicy: data.settings?.returnPolicy || config.returnPolicy,
+        instagramUrl: data.settings?.instagramUrl ?? config.instagramUrl,
+        facebookUrl: data.settings?.facebookUrl ?? config.facebookUrl,
+        twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
+        tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
+        themePreset: data.settings?.themePreset || config.themePreset || "default",
+        videoBanner: data.settings?.videoBanner || null,
+        content: data.settings?.content || null,
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
     return NextResponse.json(

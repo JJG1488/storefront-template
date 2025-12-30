@@ -512,7 +512,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/admin"
@@ -528,7 +528,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 w-full sm:w-auto"
+          className="hidden md:flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {saved ? (
             <>
@@ -1553,6 +1553,30 @@ Contact info@gosovereign.io for assistance with custom domain setup.
           Settings changes require a redeployment to take effect. After saving, you'll need to
           redeploy your store through GoSovereign for changes to appear.
         </p>
+      </div>
+
+      {/* Spacer for sticky footer on mobile */}
+      <div className="h-24 md:h-0" />
+
+      {/* Sticky Save Footer - Mobile Only */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden z-50">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base font-medium"
+        >
+          {saved ? (
+            <>
+              <Check className="w-5 h-5" />
+              Saved
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5" />
+              {saving ? "Saving..." : "Save Changes"}
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
