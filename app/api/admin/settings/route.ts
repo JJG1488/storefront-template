@@ -54,7 +54,16 @@ export async function GET(request: NextRequest) {
       .eq("store_id", storeId)
       .single();
 
+    // Debug logging - check Vercel function logs
+    console.log("[Settings GET] storeId:", storeId);
+    console.log("[Settings GET] query error:", error?.message || "none");
+    console.log("[Settings GET] data found:", !!data);
+    if (data?.settings) {
+      console.log("[Settings GET] data.settings keys:", Object.keys(data.settings));
+    }
+
     if (error || !data) {
+      console.log("[Settings GET] Falling back to config defaults - error:", error?.message);
       // Fall back to environment variables if no settings in DB
       const config = getStoreConfig();
       return jsonResponseNoCache({
@@ -123,6 +132,10 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
+    // Debug logging
+    console.log("[Settings PUT] storeId:", storeId);
+    console.log("[Settings PUT] body keys:", Object.keys(body));
+
     // Upsert settings
     const { data, error } = await supabase
       .from("store_settings")
@@ -138,6 +151,13 @@ export async function PUT(request: NextRequest) {
       )
       .select()
       .single();
+
+    // Debug logging
+    console.log("[Settings PUT] upsert error:", error?.message || "none");
+    console.log("[Settings PUT] upsert success:", !!data);
+    if (data?.settings) {
+      console.log("[Settings PUT] saved settings keys:", Object.keys(data.settings));
+    }
 
     if (error) {
       console.error("Failed to save settings:", error);
