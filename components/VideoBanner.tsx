@@ -51,7 +51,7 @@ export function VideoBanner({
     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`;
 
     return (
-      <div className="w-full h-[30vh] min-h-[200px] max-h-[400px] overflow-hidden bg-black">
+      <div className="w-full aspect-video">
         <iframe
           src={embedUrl}
           className="w-full h-full"
@@ -67,14 +67,14 @@ export function VideoBanner({
   // Uploaded video
   if (type === "upload" && uploadedUrl) {
     return (
-      <div className="w-full h-[30vh] min-h-[200px] max-h-[400px] overflow-hidden bg-black">
+      <div className="w-full">
         <video
           src={uploadedUrl}
           autoPlay
           muted
           loop
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-auto"
         />
       </div>
     );
@@ -83,11 +83,11 @@ export function VideoBanner({
   // Image
   if (type === "image" && imageUrl) {
     return (
-      <div className="w-full h-[30vh] min-h-[200px] max-h-[400px] overflow-hidden bg-black">
+      <div className="w-full">
         <img
           src={imageUrl}
           alt="Banner"
-          className="w-full h-full object-cover"
+          className="w-full h-auto"
         />
       </div>
     );
