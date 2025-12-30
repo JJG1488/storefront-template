@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { AdminContext } from "@/lib/admin-context";
 
 function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean> }) {
@@ -69,6 +70,12 @@ function LoginForm({ onLogin }: { onLogin: (password: string) => Promise<boolean
 
 function AdminNav({ onLogout }: { onLogout: () => void }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const links = [
     { href: "/admin", label: "Dashboard" },
@@ -83,10 +90,13 @@ function AdminNav({ onLogout }: { onLogout: () => void }) {
     <nav className="bg-gray-900 text-white">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
+          {/* Logo - always visible */}
           <Link href="/admin" className="font-bold text-lg">
             Store Admin
           </Link>
-          <div className="flex items-center gap-6">
+
+          {/* Desktop nav - hidden on mobile */}
+          <div className="hidden md:flex items-center gap-6">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -108,8 +118,51 @@ function AdminNav({ onLogout }: { onLogout: () => void }) {
               Sign Out
             </button>
           </div>
+
+          {/* Mobile hamburger - visible only on mobile, RIGHT side */}
+          <button
+            className="md:hidden p-2 text-gray-400 hover:text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-800">
+          <div className="px-4 py-3 space-y-1">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`block py-2 px-3 rounded-lg ${
+                  pathname === link.href
+                    ? "bg-gray-800 text-white font-medium"
+                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <hr className="border-gray-700 my-2" />
+            <Link
+              href="/"
+              className="block py-2 px-3 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white"
+            >
+              View Store
+            </Link>
+            <button
+              onClick={onLogout}
+              className="block w-full text-left py-2 px-3 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
