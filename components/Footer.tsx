@@ -255,9 +255,9 @@ export function Footer() {
             </div>
 
             {/* Payment Methods */}
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500 text-xs mr-2">We accept:</span>
-              <div className="flex items-center gap-2 text-gray-400">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <span className="text-gray-500 text-xs">We accept:</span>
+              <div className="flex items-center gap-2 text-gray-400 flex-shrink-0">
                 <VisaIcon />
                 <MastercardIcon />
                 <AmexIcon />
