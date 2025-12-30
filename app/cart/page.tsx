@@ -3,6 +3,7 @@
 import { useCart } from "@/components/CartContext";
 import { formatPrice } from "@/data/products";
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 
 interface StockIssue {
   productId: string;
@@ -101,63 +102,71 @@ export default function CartPage() {
           return (
             <div
               key={item.product.id}
-              className={`flex items-center gap-4 p-4 border rounded-lg ${
+              className={`p-4 border rounded-lg ${
                 stockError ? "border-red-300 bg-red-50" : ""
               }`}
             >
-              {item.product.images[0] && (
-                <img
-                  src={item.product.images[0]}
-                  alt={item.product.name}
-                  className="w-24 h-24 object-cover rounded"
-                />
-              )}
-              <div className="flex-1">
-                <h3 className="font-semibold">{item.product.name}</h3>
-                <p className="text-gray-600">{formatPrice(item.product.price)}</p>
-                {stockError && (
-                  <p className="text-red-600 text-sm mt-1">
-                    Only {stockError.available} in stock
-                  </p>
+              {/* Top row: Image + Product Info */}
+              <div className="flex gap-4">
+                {item.product.images[0] && (
+                  <img
+                    src={item.product.images[0]}
+                    alt={item.product.name}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded flex-shrink-0"
+                  />
                 )}
-                {item.product.track_inventory &&
-                  item.product.inventory_count !== null &&
-                  !stockError && (
-                    <p className="text-gray-500 text-sm mt-1">
-                      {item.product.inventory_count} in stock
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold truncate">{item.product.name}</h3>
+                  <p className="text-gray-600">{formatPrice(item.product.price)}</p>
+                  {stockError && (
+                    <p className="text-red-600 text-sm mt-1">
+                      Only {stockError.available} in stock
                     </p>
                   )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    updateQuantity(item.product.id, item.quantity - 1)
-                  }
-                  className="px-3 py-1 border rounded hover:bg-gray-100"
-                >
-                  -
-                </button>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <button
-                  onClick={() =>
-                    updateQuantity(item.product.id, item.quantity + 1)
-                  }
-                  disabled={
-                    item.product.track_inventory &&
+                  {item.product.track_inventory &&
                     item.product.inventory_count !== null &&
-                    item.quantity >= item.product.inventory_count
-                  }
-                  className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    !stockError && (
+                      <p className="text-gray-500 text-sm mt-1">
+                        {item.product.inventory_count} in stock
+                      </p>
+                    )}
+                </div>
+              </div>
+
+              {/* Bottom row: Quantity + Remove */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      updateQuantity(item.product.id, item.quantity - 1)
+                    }
+                    className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center">{item.quantity}</span>
+                  <button
+                    onClick={() =>
+                      updateQuantity(item.product.id, item.quantity + 1)
+                    }
+                    disabled={
+                      item.product.track_inventory &&
+                      item.product.inventory_count !== null &&
+                      item.quantity >= item.product.inventory_count
+                    }
+                    className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={() => removeItem(item.product.id)}
+                  className="flex items-center gap-1 text-red-500 hover:text-red-700 p-2 -mr-2"
                 >
-                  +
+                  <Trash2 className="w-5 h-5" />
+                  <span className="hidden sm:inline">Remove</span>
                 </button>
               </div>
-              <button
-                onClick={() => removeItem(item.product.id)}
-                className="text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
             </div>
           );
         })}
