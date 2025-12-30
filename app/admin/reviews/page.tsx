@@ -164,7 +164,7 @@ export default function ReviewsAdminPage() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/admin"
@@ -179,7 +179,7 @@ export default function ReviewsAdminPage() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
           Add Review
@@ -375,7 +375,8 @@ export default function ReviewsAdminPage() {
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="bg-white border border-gray-200 rounded-xl p-5"
+              onClick={() => handleEdit(review)}
+              className="bg-white border border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -437,17 +438,17 @@ export default function ReviewsAdminPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-1 sm:gap-2 ml-4">
                   <button
-                    onClick={() => handleEdit(review)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={(e) => { e.stopPropagation(); handleEdit(review); }}
+                    className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(review.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(review.id); }}
+                    className="p-3 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />

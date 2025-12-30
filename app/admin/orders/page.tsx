@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface OrderItem {
   id: string;
@@ -33,6 +33,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get("status");
 
@@ -107,7 +108,40 @@ export default function OrdersPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <>
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              onClick={() => router.push(`/admin/orders/${order.id}`)}
+              className="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-mono text-sm">#{order.id.slice(0, 8)}</span>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs capitalize ${
+                    STATUS_COLORS[order.status] || "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {order.status}
+                </span>
+              </div>
+              <div className="font-medium">{order.customer_name}</div>
+              <div className="text-sm text-gray-500">{order.customer_email}</div>
+              <div className="flex justify-between items-center mt-3 text-sm">
+                <span className="text-gray-500">{order.order_items?.length || 0} items</span>
+                <span className="font-medium">${((order.total || 0) / 100).toFixed(2)}</span>
+              </div>
+              <div className="text-xs text-gray-400 mt-2">
+                {new Date(order.created_at).toLocaleDateString()}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -134,7 +168,11 @@ export default function OrdersPage() {
             </thead>
             <tbody className="divide-y">
               {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
+                <tr
+                  key={order.id}
+                  onClick={() => router.push(`/admin/orders/${order.id}`)}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <span className="font-mono text-sm">
                       #{order.id.slice(0, 8)}
@@ -179,6 +217,7 @@ export default function OrdersPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );
