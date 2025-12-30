@@ -378,7 +378,7 @@ export default function ReviewsAdminPage() {
               onClick={() => handleEdit(review)}
               className="bg-white border border-gray-200 rounded-xl p-5 cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     {/* Avatar */}
@@ -438,7 +438,7 @@ export default function ReviewsAdminPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 sm:gap-2 ml-4">
+                <div className="flex items-center justify-end sm:justify-start gap-2 sm:ml-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleEdit(review); }}
                     className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
