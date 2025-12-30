@@ -37,35 +37,63 @@ export function Header() {
 
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4 relative">
-            {/* Mobile Menu Button + Logo */}
-            <div className="flex items-center gap-3">
+          {/* Mobile/Tablet: 3-column grid */}
+          <div className="grid grid-cols-3 items-center lg:hidden">
+            {/* Left: Menu + Logo */}
+            <div className="flex items-center gap-2">
               <MenuButton
                 onClick={() => setMobileMenuOpen(true)}
                 isOpen={mobileMenuOpen}
               />
-
               {store.logoUrl && (
                 <Link href="/" className="flex items-center">
                   <img
                     src={store.logoUrl}
                     alt={store.name}
-                    className="h-8 md:h-10 object-contain rounded-lg"
+                    className="h-8 object-contain rounded-lg"
                   />
                 </Link>
               )}
             </div>
 
-            {/* Centered Store Name */}
+            {/* Center: Store Name */}
             <Link
               href="/"
-              className="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors"
+              className="justify-self-center text-base sm:text-lg font-bold text-gray-900 hover:text-gray-700 transition-colors truncate max-w-full text-center"
             >
               {store.name}
             </Link>
 
+            {/* Right: Actions */}
+            <div className="flex items-center justify-end gap-1">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Search"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <CartIcon />
+            </div>
+          </div>
+
+          {/* Desktop: Full navigation */}
+          <div className="hidden lg:flex items-center justify-between gap-4">
+            {/* Left: Menu + Logo */}
+            <div className="flex items-center gap-3">
+              {store.logoUrl && (
+                <Link href="/" className="flex items-center">
+                  <img
+                    src={store.logoUrl}
+                    alt={store.name}
+                    className="h-10 object-contain rounded-lg"
+                  />
+                </Link>
+              )}
+            </div>
+
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="flex items-center gap-6">
               <Link
                 href="/"
                 className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
@@ -86,41 +114,35 @@ export function Header() {
               </Link>
             </nav>
 
-            {/* Search Bar (Desktop) */}
-            <div className="hidden lg:flex flex-1 max-w-md mx-4">
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="flex items-center gap-2 w-full px-4 py-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <Search className="w-4 h-4" />
-                <span className="text-sm">Search products...</span>
-                <span className="ml-auto text-xs text-gray-400 border border-gray-300 rounded px-1.5 py-0.5">
-                  ⌘K
-                </span>
-              </button>
-            </div>
+            {/* Center: Store Name */}
+            <Link
+              href="/"
+              className="text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors"
+            >
+              {store.name}
+            </Link>
+
+            {/* Search Bar */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors min-w-[200px]"
+            >
+              <Search className="w-4 h-4" />
+              <span className="text-sm">Search...</span>
+              <span className="ml-auto text-xs text-gray-400 border border-gray-300 rounded px-1.5 py-0.5">
+                ⌘K
+              </span>
+            </button>
 
             {/* Right Actions */}
             <div className="flex items-center gap-1">
-              {/* Search (Mobile/Tablet) */}
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Search"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-
-              {/* Wishlist */}
               <Link
                 href="/wishlist"
-                className="hidden sm:flex p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
               </Link>
-
-              {/* Cart */}
               <CartIcon />
             </div>
           </div>
