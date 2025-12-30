@@ -47,6 +47,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Debug: Check ALL rows in the table first
+    const { data: allRows, error: allError } = await supabase
+      .from("store_settings")
+      .select("store_id, updated_at");
+    console.log("[Settings GET] ALL rows in table:", JSON.stringify(allRows));
+    console.log("[Settings GET] Looking for storeId:", storeId);
+
     // Try to get settings from store_settings table
     const { data, error } = await supabase
       .from("store_settings")
