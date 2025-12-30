@@ -2,9 +2,10 @@
 
 export interface VideoBannerProps {
   enabled: boolean;
-  type: "youtube" | "upload";
+  type: "youtube" | "upload" | "image";
   youtubeUrl?: string;
   uploadedUrl?: string;
+  imageUrl?: string;
 }
 
 /**
@@ -36,6 +37,7 @@ export function VideoBanner({
   type,
   youtubeUrl,
   uploadedUrl,
+  imageUrl,
 }: VideoBannerProps) {
   // Don't render if not enabled
   if (!enabled) return null;
@@ -72,6 +74,19 @@ export function VideoBanner({
           muted
           loop
           playsInline
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Image
+  if (type === "image" && imageUrl) {
+    return (
+      <div className="w-full h-[30vh] min-h-[200px] max-h-[400px] overflow-hidden bg-black">
+        <img
+          src={imageUrl}
+          alt="Banner"
           className="w-full h-full object-cover"
         />
       </div>

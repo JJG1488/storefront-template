@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image } from "lucide-react";
 import { VideoUpload } from "@/components/VideoUpload";
+import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
 
 interface VideoBannerSettings {
   enabled: boolean;
-  type: "youtube" | "upload";
+  type: "youtube" | "upload" | "image";
   youtubeUrl: string;
   uploadedUrl: string;
+  imageUrl: string;
 }
 
 interface StoreSettings {
@@ -66,6 +68,7 @@ export default function SettingsPage() {
       type: "youtube",
       youtubeUrl: "",
       uploadedUrl: "",
+      imageUrl: "",
     },
     content: {
       shipping: defaultContent.shipping,
@@ -205,6 +208,7 @@ export default function SettingsPage() {
               type: data.settings?.videoBanner?.type || "youtube",
               youtubeUrl: data.settings?.videoBanner?.youtubeUrl || "",
               uploadedUrl: data.settings?.videoBanner?.uploadedUrl || "",
+              imageUrl: data.settings?.videoBanner?.imageUrl || "",
             },
             content: {
               shipping: data.settings?.content?.shipping || defaultContent.shipping,
@@ -819,6 +823,23 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                       <Upload className="w-5 h-5" />
                       Upload Video
                     </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, type: "image" },
+                        })
+                      }
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                        settings.videoBanner?.type === "image"
+                          ? "border-brand bg-brand/5 text-brand"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <Image className="w-5 h-5" />
+                      Upload Image
+                    </button>
                   </div>
                 </div>
 
@@ -864,6 +885,24 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                   </div>
                 )}
 
+                {/* Image Upload */}
+                {settings.videoBanner?.type === "image" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Image
+                    </label>
+                    <ImageUpload
+                      value={settings.videoBanner?.imageUrl || ""}
+                      onChange={(url) =>
+                        setSettings({
+                          ...settings,
+                          videoBanner: { ...settings.videoBanner!, imageUrl: url },
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
                 {/* Recommendation Note */}
                 <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
                   <div className="flex items-start gap-3">
@@ -871,8 +910,8 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                     <div>
                       <p className="font-medium text-purple-900">Recommendation</p>
                       <p className="text-sm text-purple-700 mt-1">
-                        Use short clips (5-10 seconds) for best performance. Videos will autoplay
-                        muted and loop continuously below your header.
+                        For videos, use short clips (5-10 seconds) for best performance. Videos will
+                        autoplay muted and loop continuously. Images display as a static banner.
                       </p>
                     </div>
                   </div>

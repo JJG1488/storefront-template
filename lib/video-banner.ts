@@ -3,9 +3,10 @@ import type { VideoBannerProps } from "@/components/VideoBanner";
 
 interface VideoBannerSettings {
   enabled?: boolean;
-  type?: "youtube" | "upload";
+  type?: "youtube" | "upload" | "image";
   youtubeUrl?: string;
   uploadedUrl?: string;
+  imageUrl?: string;
 }
 
 /**
@@ -19,6 +20,7 @@ export async function getVideoBannerSettings(): Promise<VideoBannerProps> {
     type: "youtube",
     youtubeUrl: "",
     uploadedUrl: "",
+    imageUrl: "",
   };
 
   // Don't fetch during build time
@@ -58,6 +60,7 @@ export async function getVideoBannerSettings(): Promise<VideoBannerProps> {
       type: videoBanner.type ?? "youtube",
       youtubeUrl: videoBanner.youtubeUrl ?? "",
       uploadedUrl: videoBanner.uploadedUrl ?? "",
+      imageUrl: videoBanner.imageUrl ?? "",
     };
   } catch (error) {
     console.error("Failed to fetch video banner settings:", error);
