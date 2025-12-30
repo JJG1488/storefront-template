@@ -225,7 +225,7 @@ export function MenuButton({ onClick, isOpen }: MenuButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors md:hidden"
+      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       <div className="w-6 h-5 flex flex-col justify-between">

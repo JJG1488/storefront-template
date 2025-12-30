@@ -36,7 +36,7 @@ export function Header() {
       )}
 
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-9xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 py-3">
           {/* Mobile/Tablet: 3-column grid */}
           <div className="grid grid-cols-3 items-center lg:hidden">
             {/* Left: Menu + Logo */}
