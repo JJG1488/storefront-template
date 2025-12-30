@@ -37,7 +37,7 @@ export function Header() {
 
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 relative">
             {/* Mobile Menu Button + Logo */}
             <div className="flex items-center gap-3">
               <MenuButton
@@ -45,20 +45,24 @@ export function Header() {
                 isOpen={mobileMenuOpen}
               />
 
-              <Link href="/" className="flex items-center gap-2">
-                {store.logoUrl ? (
+              {store.logoUrl && (
+                <Link href="/" className="flex items-center">
                   <img
                     src={store.logoUrl}
                     alt={store.name}
                     className="h-8 md:h-10 object-contain rounded-lg"
                   />
-                ) : (
-                  <span className="text-xl font-bold text-gray-900">
-                    {store.name}
-                  </span>
-                )}
-              </Link>
+                </Link>
+              )}
             </div>
+
+            {/* Centered Store Name */}
+            <Link
+              href="/"
+              className="absolute left-1/2 -translate-x-1/2 text-lg md:text-xl font-bold text-gray-900 hover:text-gray-700 transition-colors"
+            >
+              {store.name}
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
