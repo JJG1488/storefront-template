@@ -166,6 +166,10 @@ export async function PUT(request: NextRequest) {
     console.log("[Settings PUT] upsert success:", !!data);
     if (data?.settings) {
       console.log("[Settings PUT] saved settings keys:", Object.keys(data.settings));
+      // Show what was actually saved to DB
+      console.log("[Settings PUT] DB now has tagline:", JSON.stringify(data.settings.tagline));
+      console.log("[Settings PUT] DB now has aboutText:", JSON.stringify(data.settings.aboutText));
+      console.log("[Settings PUT] DB now has announcementBar:", JSON.stringify(data.settings.announcementBar));
     }
 
     if (error) {
