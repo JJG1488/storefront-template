@@ -47,10 +47,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Debug: Add timestamp to prove this is a fresh query
+    console.log("========== SETTINGS GET START ==========");
+    console.log("[Settings GET] Query time:", new Date().toISOString());
+
     // Debug: Check ALL rows in the table first
     const { data: allRows, error: allError } = await supabase
       .from("store_settings")
       .select("store_id, updated_at");
+    console.log("[Settings GET] allRows error:", allError?.message || "none");
     console.log("[Settings GET] ALL rows in table:", JSON.stringify(allRows));
     console.log("[Settings GET] Looking for storeId:", storeId);
 
