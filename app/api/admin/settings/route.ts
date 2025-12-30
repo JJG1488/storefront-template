@@ -58,6 +58,8 @@ export async function GET(request: NextRequest) {
     console.log("[Settings GET] storeId:", storeId);
     console.log("[Settings GET] query error:", error?.message || "none");
     console.log("[Settings GET] data found:", !!data);
+    // Log the RAW data from Supabase to see exact structure
+    console.log("[Settings GET] RAW data:", JSON.stringify(data));
     if (data?.settings) {
       console.log("[Settings GET] data.settings keys:", Object.keys(data.settings));
       // Show actual values for key fields
