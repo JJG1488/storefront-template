@@ -111,7 +111,7 @@ export function VideoUpload({ value, onChange }: VideoUploadProps) {
         <div className="relative">
           <video
             src={value}
-            className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200"
+            className="w-full max-w-md h-full rounded-lg border border-gray-200"
             muted
             playsInline
             controls
