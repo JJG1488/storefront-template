@@ -60,6 +60,11 @@ export async function GET(request: NextRequest) {
     console.log("[Settings GET] data found:", !!data);
     if (data?.settings) {
       console.log("[Settings GET] data.settings keys:", Object.keys(data.settings));
+      // Show actual values for key fields
+      console.log("[Settings GET] tagline value:", JSON.stringify(data.settings.tagline));
+      console.log("[Settings GET] aboutText value:", JSON.stringify(data.settings.aboutText));
+      console.log("[Settings GET] announcementBar value:", JSON.stringify(data.settings.announcementBar));
+      console.log("[Settings GET] name value:", JSON.stringify(data.settings.name));
     }
 
     if (error || !data) {
@@ -135,6 +140,10 @@ export async function PUT(request: NextRequest) {
     // Debug logging
     console.log("[Settings PUT] storeId:", storeId);
     console.log("[Settings PUT] body keys:", Object.keys(body));
+    console.log("[Settings PUT] tagline being saved:", JSON.stringify(body.tagline));
+    console.log("[Settings PUT] aboutText being saved:", JSON.stringify(body.aboutText));
+    console.log("[Settings PUT] announcementBar being saved:", JSON.stringify(body.announcementBar));
+    console.log("[Settings PUT] name being saved:", JSON.stringify(body.name));
 
     // Upsert settings
     const { data, error } = await supabase
