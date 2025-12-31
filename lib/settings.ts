@@ -1,4 +1,4 @@
-import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
+import { createFreshAdminClient, getStoreId, isBuildTime } from "@/lib/supabase";
 import { getStoreConfig } from "@/lib/store";
 
 /**
@@ -63,18 +63,21 @@ export async function getStoreSettingsFromDB(): Promise<RuntimeSettings> {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
+    // Use fresh client to avoid caching issues
+    const supabase = createFreshAdminClient();
     const storeId = getStoreId();
 
     if (!supabase || !storeId) {
       return defaults;
     }
 
-    const { data } = await supabase
+    // Use .limit(1) instead of .single() to avoid Supabase PostgREST caching
+    const { data: rows } = await supabase
       .from("store_settings")
       .select("settings")
       .eq("store_id", storeId)
-      .single();
+      .limit(1);
+    const data = rows?.[0] || null;
 
     if (data?.settings) {
       // Merge database settings with defaults (DB takes precedence)
