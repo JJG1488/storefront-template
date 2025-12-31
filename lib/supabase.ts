@@ -61,11 +61,16 @@ export function createFreshAdminClient(): SupabaseClient | null {
   return createClient(supabaseUrl, key, {
     global: {
       fetch: (url, options = {}) => {
+        // Properly merge headers - options.headers can be Headers object or plain object
+        const existingHeaders = options.headers instanceof Headers
+          ? Object.fromEntries(options.headers.entries())
+          : (options.headers || {});
+
         return fetch(url, {
           ...options,
           cache: 'no-store',
           headers: {
-            ...options.headers,
+            ...existingHeaders,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
           },
