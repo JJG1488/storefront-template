@@ -86,11 +86,11 @@ export const defaultContent: ContentSettings = {
   ],
 };
 
-// Fetch content from settings API, falling back to defaults
+// Fetch content from public store content API, falling back to defaults
 export async function getContentSettings(): Promise<ContentSettings> {
   try {
-    // Use cache-busting to ensure fresh data after admin saves
-    const res = await fetch("/api/admin/settings", {
+    // Use public endpoint (no auth required) with cache-busting
+    const res = await fetch("/api/store/content", {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -99,13 +99,11 @@ export async function getContentSettings(): Promise<ContentSettings> {
     });
     if (res.ok) {
       const data = await res.json();
-      // Merge with defaults to ensure all fields exist
+      // API already returns merged content with defaults
       return {
-        shipping: { ...defaultContent.shipping, ...data.settings?.content?.shipping },
-        returns: { ...defaultContent.returns, ...data.settings?.content?.returns },
-        faq: data.settings?.content?.faq?.length > 0
-          ? data.settings.content.faq
-          : defaultContent.faq,
+        shipping: data.shipping || defaultContent.shipping,
+        returns: data.returns || defaultContent.returns,
+        faq: data.faq?.length > 0 ? data.faq : defaultContent.faq,
       };
     }
   } catch (error) {
