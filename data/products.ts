@@ -8,6 +8,9 @@ export interface Product {
   images: string[];
   track_inventory: boolean;
   inventory_count: number | null;
+  // Digital product fields
+  is_digital: boolean;
+  digital_file_url: string | null;
 }
 
 // Fetch products from Supabase
@@ -49,6 +52,8 @@ export async function getProducts(): Promise<Product[]> {
       ),
       track_inventory: p.track_inventory ?? false,
       inventory_count: p.inventory_count,
+      is_digital: p.is_digital ?? false,
+      digital_file_url: p.digital_file_url || null,
     }));
   } catch (err) {
     console.error("Failed to fetch products:", err);
@@ -92,6 +97,8 @@ export async function getProduct(id: string): Promise<Product | null> {
       ),
       track_inventory: data.track_inventory ?? false,
       inventory_count: data.inventory_count,
+      is_digital: data.is_digital ?? false,
+      digital_file_url: data.digital_file_url || null,
     };
   } catch (err) {
     console.error("Failed to fetch product:", err);
@@ -144,6 +151,8 @@ export async function getProductAdmin(id: string): Promise<Product | null> {
       ),
       track_inventory: data.track_inventory ?? false,
       inventory_count: data.inventory_count,
+      is_digital: data.is_digital ?? false,
+      digital_file_url: data.digital_file_url || null,
     };
   } catch (err) {
     console.error("[getProductAdmin] Failed to fetch product:", err);

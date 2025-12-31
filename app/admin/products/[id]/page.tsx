@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
+import { FileUpload } from "@/components/FileUpload";
+import { Download } from "lucide-react";
 
 interface ProductImage {
   url: string;
@@ -20,6 +22,9 @@ interface Product {
   status: string;
   inventory_count: number | null;
   track_inventory: boolean;
+  // Digital product fields
+  is_digital: boolean;
+  digital_file_url: string | null;
 }
 
 export default function EditProductPage() {
@@ -39,6 +44,12 @@ export default function EditProductPage() {
   const [trackInventory, setTrackInventory] = useState(false);
   const [inventoryCount, setInventoryCount] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
+  // Digital product fields
+  const [isDigital, setIsDigital] = useState(false);
+  const [digitalFilePath, setDigitalFilePath] = useState("");
+  const [digitalFileName, setDigitalFileName] = useState("");
+  const [digitalFileSize, setDigitalFileSize] = useState(0);
 
   useEffect(() => {
     async function loadProduct() {
@@ -60,6 +71,9 @@ export default function EditProductPage() {
         setTrackInventory(product.track_inventory || false);
         setInventoryCount(product.inventory_count?.toString() || "");
         setImageUrl(product.images?.[0]?.url || "");
+        // Set digital product fields
+        setIsDigital(product.is_digital || false);
+        setDigitalFilePath(product.digital_file_url || "");
       } catch (err) {
         console.error("Failed to load product:", err);
         setError("Failed to load product");
@@ -92,6 +106,11 @@ export default function EditProductPage() {
       setError("Please upload a product image.");
       return;
     }
+    // Validate digital file if digital product
+    if (isDigital && !digitalFilePath) {
+      setError("Please upload a digital file for this product.");
+      return;
+    }
 
     setSaving(true);
 
@@ -108,9 +127,12 @@ export default function EditProductPage() {
           description: description.trim(),
           price: parseFloat(price) || 0,
           status,
-          track_inventory: trackInventory,
-          inventory_count: trackInventory ? parseInt(inventoryCount) || 0 : null,
+          track_inventory: isDigital ? false : trackInventory, // Digital products don't track inventory
+          inventory_count: isDigital ? null : (trackInventory ? parseInt(inventoryCount) || 0 : null),
           images: imageUrl ? [{ url: imageUrl, alt: name.trim(), position: 0 }] : [],
+          // Digital product fields
+          is_digital: isDigital,
+          digital_file_url: isDigital ? digitalFilePath : null,
         }),
       });
 
@@ -222,6 +244,50 @@ export default function EditProductPage() {
 
           <ImageUpload value={imageUrl} onChange={setImageUrl} required />
 
+          {/* Digital Product Toggle */}
+          <div className="border-t pt-6">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isDigital}
+                onChange={(e) => {
+                  setIsDigital(e.target.checked);
+                  // Auto-disable inventory tracking for digital products
+                  if (e.target.checked) {
+                    setTrackInventory(false);
+                  }
+                }}
+                className="w-5 h-5 rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              <div>
+                <span className="font-medium flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Digital Product
+                </span>
+                <p className="text-sm text-gray-500">
+                  Customers will receive a download link after purchase
+                </p>
+              </div>
+            </label>
+
+            {isDigital && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <FileUpload
+                  value={digitalFilePath}
+                  onChange={(path, metadata) => {
+                    setDigitalFilePath(path);
+                    if (metadata) {
+                      setDigitalFileName(metadata.name);
+                      setDigitalFileSize(metadata.size);
+                    }
+                  }}
+                  fileName={digitalFileName}
+                  fileSize={digitalFileSize}
+                />
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Status
@@ -237,32 +303,35 @@ export default function EditProductPage() {
             </select>
           </div>
 
-          <div className="border-t pt-6">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={trackInventory}
-                onChange={(e) => setTrackInventory(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300"
-              />
-              <span className="font-medium">Track Inventory</span>
-            </label>
-
-            {trackInventory && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Inventory Count
-                </label>
+          {/* Inventory tracking - hidden for digital products */}
+          {!isDigital && (
+            <div className="border-t pt-6">
+              <label className="flex items-center gap-3">
                 <input
-                  type="number"
-                  min="0"
-                  value={inventoryCount}
-                  onChange={(e) => setInventoryCount(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                  type="checkbox"
+                  checked={trackInventory}
+                  onChange={(e) => setTrackInventory(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300"
                 />
-              </div>
-            )}
-          </div>
+                <span className="font-medium">Track Inventory</span>
+              </label>
+
+              {trackInventory && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Inventory Count
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={inventoryCount}
+                    onChange={(e) => setInventoryCount(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center mt-8 pt-6 border-t">

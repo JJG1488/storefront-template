@@ -122,37 +122,53 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
     product_name: string;
     quantity: number;
     price_at_time: number;
+    is_digital?: boolean;
+    download_url?: string;
   }> = [];
 
   for (const item of lineItems.data) {
     const productData = item.price?.product as Stripe.Product;
     const productId = productData?.metadata?.product_id;
+    const isDigital = productData?.metadata?.is_digital === "true";
     const quantity = item.quantity || 1;
     const productName = item.description || productData?.name || "Unknown Product";
     const priceAtTime = item.price?.unit_amount || 0;
 
+    // Generate download token for digital products
+    let downloadToken: string | null = null;
+    if (isDigital && productId) {
+      downloadToken = crypto.randomUUID();
+    }
+
     // Create order item
-    await supabase.from("order_items").insert({
+    const { data: orderItem } = await supabase.from("order_items").insert({
       order_id: order.id,
       product_id: productId || null,
       product_name: productName,
       quantity,
-      price_at_time: priceAtTime,
-    });
+      unit_price: priceAtTime,
+      download_url: downloadToken, // Store download token for digital products
+      download_count: 0,
+    }).select().single();
 
     orderItems.push({
       product_name: productName,
       quantity,
       price_at_time: priceAtTime,
+      is_digital: isDigital,
+      download_url: downloadToken || undefined,
     });
 
-    // Decrement inventory if we have a product ID
-    if (productId) {
+    // Only decrement inventory for physical products
+    if (productId && !isDigital) {
       await decrementInventory(supabase, productId, quantity);
     }
   }
 
   console.log("Order created successfully:", order.id);
+
+  // Check if order has any digital items
+  const hasDigitalItems = orderItems.some(item => item.is_digital);
 
   // Send email notifications (fire and forget - don't block webhook response)
   const orderDetails = {
@@ -172,6 +188,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       postal_code?: string;
       country?: string;
     },
+    hasDigitalItems, // Flag for email template
   };
 
   // Send order confirmation to customer

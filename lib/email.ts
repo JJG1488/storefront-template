@@ -24,6 +24,8 @@ interface OrderItem {
   product_name: string;
   quantity: number;
   price_at_time: number;
+  is_digital?: boolean;
+  download_url?: string; // Download token for digital products
 }
 
 interface OrderDetails {
@@ -43,6 +45,7 @@ interface OrderDetails {
     postal_code?: string;
     country?: string;
   };
+  hasDigitalItems?: boolean;
 }
 
 /**
@@ -88,6 +91,41 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
     `
     : "";
 
+  // Build digital downloads section
+  const digitalItems = order.items.filter(item => item.is_digital && item.download_url);
+  const storeUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "";
+
+  const downloadsHtml = digitalItems.length > 0
+    ? `
+      <div style="margin-top: 30px; padding: 20px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+        <h3 style="color: #1d4ed8; margin: 0 0 15px 0; display: flex; align-items: center;">
+          &#128229; Your Digital Downloads
+        </h3>
+        <p style="color: #1e40af; margin: 0 0 15px 0; font-size: 14px;">
+          Click below to download your digital products. Links are valid for multiple downloads.
+        </p>
+        ${digitalItems.map(item => `
+          <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+            <a href="${storeUrl}/api/download/${item.download_url}"
+               style="color: #2563eb; text-decoration: none; font-weight: 500;">
+              &#10145; ${item.product_name}
+            </a>
+          </div>
+        `).join("")}
+        <p style="color: #6b7280; font-size: 12px; margin: 15px 0 0 0;">
+          Save these links - you can download your files anytime.
+        </p>
+      </div>
+    `
+    : "";
+
+  // Adjust message based on order type
+  const orderMessage = digitalItems.length === order.items.length
+    ? "Your digital products are ready for download below!"
+    : digitalItems.length > 0
+    ? "We've received your order. Your digital products are ready below, and physical items will ship soon."
+    : "We've received your order and are getting it ready. We'll notify you when it ships.";
+
   try {
     await resend.emails.send({
       from: getFromAddress(),
@@ -113,7 +151,7 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
           </div>
 
           <p>Hi ${order.customerName},</p>
-          <p>We've received your order and are getting it ready. We'll notify you when it ships.</p>
+          <p>${orderMessage}</p>
 
           <h3 style="border-bottom: 2px solid ${brandColor}; padding-bottom: 10px; margin-top: 30px;">Order Summary</h3>
 
@@ -138,6 +176,8 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
           </div>
 
           ${addressHtml}
+
+          ${downloadsHtml}
 
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
             <p>If you have any questions, reply to this email.</p>

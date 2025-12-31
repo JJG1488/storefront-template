@@ -3,6 +3,7 @@ import { getProduct, formatPrice } from "@/data/products";
 import { getProductReviews, getProductRating } from "@/lib/reviews";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductTabs } from "@/components/ProductTabs";
+import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -73,13 +74,22 @@ export default async function ProductPage({ params }: Props) {
         {/* Product Info */}
         <div>
           <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+
+          {/* Digital Product Badge */}
+          {product.is_digital && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium mb-4">
+              <Download className="w-4 h-4" />
+              Instant Download
+            </div>
+          )}
+
           <p className="text-2xl font-semibold text-brand mb-4">
             {formatPrice(product.price)}
           </p>
           <p className="text-gray-600 mb-8">{product.description}</p>
 
-          {/* Only show out of stock when tracking inventory AND count is 0 */}
-          {product.track_inventory && product.inventory_count === 0 ? (
+          {/* Only show out of stock for physical products when tracking inventory AND count is 0 */}
+          {!product.is_digital && product.track_inventory && product.inventory_count === 0 ? (
             <button
               disabled
               className="w-full py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"

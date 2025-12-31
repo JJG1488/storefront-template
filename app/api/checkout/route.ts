@@ -54,6 +54,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Build line items for Stripe Checkout and validate stock
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     const stockIssues: StockIssue[] = [];
+    let hasPhysicalItems = false; // Track if cart has any physical (non-digital) items
 
     for (const item of items) {
       const product = await getProductAdmin(item.productId);
@@ -65,7 +66,13 @@ export async function POST(request: NextRequest): Promise<Response> {
         );
       }
 
+      // Track if this is a physical product (needs shipping)
+      if (!product.is_digital) {
+        hasPhysicalItems = true;
+      }
+
       // Check stock availability only when inventory tracking is enabled
+      // (Digital products don't track inventory)
       if (
         product.track_inventory &&
         product.inventory_count !== null &&
@@ -89,6 +96,7 @@ export async function POST(request: NextRequest): Promise<Response> {
               product.images.length > 0 ? [product.images[0]] : undefined,
             metadata: {
               product_id: product.id, // For webhook to link to inventory
+              is_digital: product.is_digital ? "true" : "false", // Track digital status for webhook
             },
           },
           unit_amount: product.price, // Already in cents
@@ -124,11 +132,16 @@ export async function POST(request: NextRequest): Promise<Response> {
       },
     };
 
-    // Add shipping address collection if enabled for physical goods stores
-    if (store.shippingEnabled && store.shippingCountries.length > 0) {
+    // Add shipping address collection only if:
+    // 1. Shipping is enabled for the store
+    // 2. There are physical (non-digital) items in the cart
+    if (hasPhysicalItems && store.shippingEnabled && store.shippingCountries.length > 0) {
       sessionParams.shipping_address_collection = {
         allowed_countries: store.shippingCountries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
       };
+      console.log("[Checkout] Adding shipping collection - cart has physical items");
+    } else if (!hasPhysicalItems) {
+      console.log("[Checkout] Skipping shipping collection - all items are digital");
     }
 
     // If the store has a connected Stripe account, use destination charges

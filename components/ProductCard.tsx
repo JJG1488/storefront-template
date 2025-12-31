@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingBag, Eye } from "lucide-react";
+import { Heart, ShoppingBag, Eye, Download } from "lucide-react";
 import type { Product } from "@/data/products";
 import { formatPrice } from "@/data/products";
 import { useCart } from "./CartContext";
@@ -22,11 +22,14 @@ export function ProductCard({ product, showQuickAdd = true }: Props) {
   // Check how many of this product are already in cart
   const inCartQty = items.find((i) => i.product.id === product.id)?.quantity || 0;
 
-  // Calculate available stock (null = unlimited)
+  // Digital products don't have stock limits
+  const isDigital = product.is_digital;
+
+  // Calculate available stock (null = unlimited, digital products always available)
   const stock = product.inventory_count;
-  const isOutOfStock = stock !== null && stock !== undefined && stock === 0;
-  const isLowStock = stock !== null && stock !== undefined && stock > 0 && stock <= 5;
-  const canAdd = stock === null || stock === undefined || inCartQty < stock;
+  const isOutOfStock = !isDigital && stock !== null && stock !== undefined && stock === 0;
+  const isLowStock = !isDigital && stock !== null && stock !== undefined && stock > 0 && stock <= 5;
+  const canAdd = isDigital || stock === null || stock === undefined || inCartQty < stock;
 
   // Check if product has multiple images for hover effect
   const hasSecondImage = product.images.length > 1;
@@ -82,6 +85,12 @@ export function ProductCard({ product, showQuickAdd = true }: Props) {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {isDigital && (
+              <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded flex items-center gap-1">
+                <Download className="w-3 h-3" />
+                Digital
+              </span>
+            )}
             {isOutOfStock && (
               <span className="px-2 py-1 bg-gray-900 text-white text-xs font-medium rounded">
                 Sold Out
