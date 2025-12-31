@@ -89,7 +89,14 @@ export const defaultContent: ContentSettings = {
 // Fetch content from settings API, falling back to defaults
 export async function getContentSettings(): Promise<ContentSettings> {
   try {
-    const res = await fetch("/api/admin/settings");
+    // Use cache-busting to ensure fresh data after admin saves
+    const res = await fetch("/api/admin/settings", {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      }
+    });
     if (res.ok) {
       const data = await res.json();
       // Merge with defaults to ensure all fields exist
