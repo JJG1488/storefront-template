@@ -15,28 +15,20 @@ function jsonResponseNoCache(data: object, status = 200) {
 
 // GET - Fetch current settings
 export async function GET(request: NextRequest) {
-  const timestamp = new Date().toISOString();
-  console.log(`[Settings GET ${timestamp}] ========== START ==========`);
-
   if (isBuildTime()) {
-    console.log(`[Settings GET ${timestamp}] Build time - returning empty`);
     return jsonResponseNoCache({ settings: {} });
   }
 
   if (!(await verifyAuthFromRequest(request))) {
-    console.log(`[Settings GET ${timestamp}] Unauthorized`);
     return jsonResponseNoCache({ error: "Unauthorized" }, 401);
   }
 
   try {
-    // First, try to get settings from the database
-    // Use fresh client to avoid stale cached data
+    // Use fresh client with cache-busting fetch to avoid stale data
     const supabase = createFreshAdminClient();
     const storeId = getStoreId();
-    console.log(`[Settings GET ${timestamp}] storeId: ${storeId}`);
 
     if (!supabase || !storeId) {
-      console.log(`[Settings GET ${timestamp}] No supabase or storeId - using env fallback`);
       // Fall back to environment variables
       const config = getStoreConfig();
       return jsonResponseNoCache({
@@ -55,8 +47,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Try to get settings from store_settings table
-    // IMPORTANT: Use .limit(1) instead of .single() to avoid Supabase PostgREST caching issues
+    // Use .limit(1) instead of .single() to avoid Supabase PostgREST caching
     const { data: rows, error } = await supabase
       .from("store_settings")
       .select("*")
@@ -64,13 +55,7 @@ export async function GET(request: NextRequest) {
       .limit(1);
     const data = rows?.[0] || null;
 
-    console.log(`[Settings GET ${timestamp}] Query error:`, error);
-    console.log(`[Settings GET ${timestamp}] Rows count:`, rows?.length);
-    console.log(`[Settings GET ${timestamp}] Row updated_at:`, data?.updated_at);
-    console.log(`[Settings GET ${timestamp}] Raw settings:`, JSON.stringify(data?.settings));
-
     if (error || !data) {
-      console.log(`[Settings GET ${timestamp}] No data found - using env fallback`);
       // Fall back to environment variables if no settings in DB
       const config = getStoreConfig();
       return jsonResponseNoCache({
@@ -93,24 +78,23 @@ export async function GET(request: NextRequest) {
     // Use ?? for optional text fields to preserve actual saved values (including empty strings)
     // Use || for required fields that should always have a value
     const config = getStoreConfig();
-    const mergedSettings = {
-      name: data.settings?.name || config.name,
-      tagline: data.settings?.tagline ?? config.tagline,
-      aboutText: data.settings?.aboutText ?? config.aboutText,
-      announcementBar: data.settings?.announcementBar ?? config.announcementBar,
-      shippingPromise: data.settings?.shippingPromise || config.shippingPromise,
-      returnPolicy: data.settings?.returnPolicy || config.returnPolicy,
-      instagramUrl: data.settings?.instagramUrl ?? config.instagramUrl,
-      facebookUrl: data.settings?.facebookUrl ?? config.facebookUrl,
-      twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
-      tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
-      themePreset: data.settings?.themePreset || config.themePreset || "default",
-      videoBanner: data.settings?.videoBanner || null,
-      content: data.settings?.content || null,
-    };
-    console.log(`[Settings GET ${timestamp}] Returning merged tagline:`, mergedSettings.tagline);
-    console.log(`[Settings GET ${timestamp}] ========== END ==========`);
-    return jsonResponseNoCache({ settings: mergedSettings });
+    return jsonResponseNoCache({
+      settings: {
+        name: data.settings?.name || config.name,
+        tagline: data.settings?.tagline ?? config.tagline,
+        aboutText: data.settings?.aboutText ?? config.aboutText,
+        announcementBar: data.settings?.announcementBar ?? config.announcementBar,
+        shippingPromise: data.settings?.shippingPromise || config.shippingPromise,
+        returnPolicy: data.settings?.returnPolicy || config.returnPolicy,
+        instagramUrl: data.settings?.instagramUrl ?? config.instagramUrl,
+        facebookUrl: data.settings?.facebookUrl ?? config.facebookUrl,
+        twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
+        tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
+        themePreset: data.settings?.themePreset || config.themePreset || "default",
+        videoBanner: data.settings?.videoBanner || null,
+        content: data.settings?.content || null,
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch settings:", error);
     return jsonResponseNoCache({ error: "Failed to fetch settings" }, 500);
@@ -119,9 +103,6 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update settings
 export async function PUT(request: NextRequest) {
-  const timestamp = new Date().toISOString();
-  console.log(`[Settings PUT ${timestamp}] ========== START ==========`);
-
   if (isBuildTime()) {
     return NextResponse.json({ error: "Not available during build" }, { status: 400 });
   }
@@ -131,13 +112,11 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    // Use fresh client to avoid stale cached data
+    // Use fresh client with cache-busting fetch
     const supabase = createFreshAdminClient();
     const storeId = getStoreId();
-    console.log(`[Settings PUT ${timestamp}] storeId: ${storeId}`);
 
     if (!supabase || !storeId) {
-      console.log(`[Settings PUT ${timestamp}] No supabase or storeId`);
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 500 }
@@ -145,8 +124,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log(`[Settings PUT ${timestamp}] Saving tagline:`, body.tagline);
-    console.log(`[Settings PUT ${timestamp}] Full body:`, JSON.stringify(body).slice(0, 500));
 
     // Upsert settings
     const { data, error } = await supabase
@@ -155,7 +132,7 @@ export async function PUT(request: NextRequest) {
         {
           store_id: storeId,
           settings: body,
-          updated_at: timestamp,
+          updated_at: new Date().toISOString(),
         },
         {
           onConflict: "store_id",
@@ -163,11 +140,6 @@ export async function PUT(request: NextRequest) {
       )
       .select()
       .single();
-
-    console.log(`[Settings PUT ${timestamp}] Upsert error:`, error);
-    console.log(`[Settings PUT ${timestamp}] Upsert result:`, data ? "success" : "no data");
-    console.log(`[Settings PUT ${timestamp}] Saved updated_at:`, data?.updated_at);
-    console.log(`[Settings PUT ${timestamp}] ========== END ==========`);
 
     if (error) {
       console.error("Failed to save settings:", error);
