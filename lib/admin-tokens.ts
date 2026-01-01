@@ -45,3 +45,8 @@ export async function verifyAuthFromRequest(request: Request): Promise<boolean> 
   return verifyAdminToken(token);
 }
 
+// Get admin password for platform API authentication
+export function getAdminPassword(): string | null {
+  return process.env.ADMIN_PASSWORD || null;
+}
+

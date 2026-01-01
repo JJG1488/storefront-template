@@ -97,7 +97,9 @@ export default function SettingsPage() {
     subdomain: string;
     subdomainUrl: string;
     customDomain: string | null;
-    status: "none" | "pending" | "configured" | "error";
+    status: "none" | "pending" | "verifying" | "configured" | "error";
+    verified: boolean;
+    verification: Array<{ type: string; domain: string; value: string; reason: string }>;
     message?: string;
   } | null>(null);
   const [customDomainInput, setCustomDomainInput] = useState("");
@@ -126,8 +128,8 @@ export default function SettingsPage() {
     loadDomain();
   }, [activeTab, flags.customDomainEnabled]);
 
-  // Save custom domain
-  const handleSaveDomain = async () => {
+  // Save custom domain and add to Vercel
+  const handleSaveDomain = async (addToVercel: boolean = true) => {
     setDomainSaving(true);
     setError("");
     try {
@@ -138,7 +140,10 @@ export default function SettingsPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ customDomain: customDomainInput.trim() || null }),
+        body: JSON.stringify({
+          customDomain: customDomainInput.trim() || null,
+          addToVercel,
+        }),
       });
 
       const data = await res.json();
@@ -149,7 +154,9 @@ export default function SettingsPage() {
             ? {
                 ...prev,
                 customDomain: customDomainInput.trim() || null,
-                status: customDomainInput.trim() ? "pending" : "none",
+                status: data.verified ? "configured" : (data.verification?.length > 0 ? "verifying" : "pending"),
+                verified: data.verified || false,
+                verification: data.verification || [],
                 message: data.message,
               }
             : null
@@ -164,6 +171,24 @@ export default function SettingsPage() {
       setError("Failed to save domain. Please try again.");
     }
     setDomainSaving(false);
+  };
+
+  // Refresh domain verification status
+  const handleRefreshStatus = async () => {
+    setDomainLoading(true);
+    try {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch("/api/admin/domain", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDomainData(data);
+      }
+    } catch (err) {
+      console.error("Failed to refresh domain status:", err);
+    }
+    setDomainLoading(false);
   };
 
   // Remove custom domain
@@ -1112,24 +1137,24 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
                     />
                     <button
-                      onClick={handleSaveDomain}
-                      disabled={domainSaving || customDomainInput === (domainData?.customDomain || "")}
+                      onClick={() => handleSaveDomain(true)}
+                      disabled={domainSaving || !customDomainInput.trim()}
                       className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                     >
                       {domainSaving ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Saving...
+                          Configuring...
                         </>
                       ) : saved ? (
                         <>
                           <Check className="w-4 h-4" />
-                          Saved
+                          Done
                         </>
                       ) : (
                         <>
-                          <Save className="w-4 h-4" />
-                          Save
+                          <Globe className="w-4 h-4" />
+                          Add Domain
                         </>
                       )}
                     </button>
@@ -1141,26 +1166,112 @@ Contact info@gosovereign.io for assistance with custom domain setup.
 
                 {/* Domain Status */}
                 {domainData?.customDomain && (
-                  <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                      <div>
-                        <p className="font-medium text-amber-900">
-                          {domainData.customDomain}
-                        </p>
-                        <p className="text-sm text-amber-700">
-                          {domainData.message || "Pending configuration"}
-                        </p>
+                  <div className={`p-4 rounded-lg border ${
+                    domainData.status === "configured"
+                      ? "bg-green-50 border-green-200"
+                      : domainData.status === "verifying"
+                      ? "bg-blue-50 border-blue-200"
+                      : "bg-amber-50 border-amber-200"
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          domainData.status === "configured"
+                            ? "bg-green-500"
+                            : "bg-amber-500 animate-pulse"
+                        }`}></div>
+                        <div>
+                          <p className={`font-medium ${
+                            domainData.status === "configured"
+                              ? "text-green-900"
+                              : domainData.status === "verifying"
+                              ? "text-blue-900"
+                              : "text-amber-900"
+                          }`}>
+                            {domainData.customDomain}
+                          </p>
+                          <p className={`text-sm ${
+                            domainData.status === "configured"
+                              ? "text-green-700"
+                              : domainData.status === "verifying"
+                              ? "text-blue-700"
+                              : "text-amber-700"
+                          }`}>
+                            {domainData.message || (
+                              domainData.status === "configured"
+                                ? "Domain is live with SSL"
+                                : domainData.status === "verifying"
+                                ? "Waiting for DNS configuration"
+                                : "Pending setup"
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {domainData.status === "verifying" && (
+                          <button
+                            onClick={handleRefreshStatus}
+                            disabled={domainLoading}
+                            className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                            title="Check verification status"
+                          >
+                            {domainLoading ? (
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                        <button
+                          onClick={handleRemoveDomain}
+                          disabled={domainSaving}
+                          className={`p-2 transition-colors ${
+                            domainData.status === "configured"
+                              ? "text-green-600 hover:text-red-600"
+                              : domainData.status === "verifying"
+                              ? "text-blue-600 hover:text-red-600"
+                              : "text-amber-600 hover:text-red-600"
+                          }`}
+                          title="Remove custom domain"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={handleRemoveDomain}
-                      disabled={domainSaving}
-                      className="p-2 text-amber-600 hover:text-red-600 transition-colors"
-                      title="Remove custom domain"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+
+                    {/* Verification Records from Vercel */}
+                    {domainData.status === "verifying" && domainData.verification && domainData.verification.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-blue-200">
+                        <p className="text-sm font-medium text-blue-900 mb-3">
+                          Add these DNS records at your domain registrar:
+                        </p>
+                        <div className="space-y-2">
+                          {domainData.verification.map((record, idx) => (
+                            <div key={idx} className="bg-white rounded-lg p-3 border border-blue-100">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                                  {record.type}
+                                </span>
+                                <span className="text-sm text-gray-600">{record.reason}</span>
+                              </div>
+                              <div className="font-mono text-sm">
+                                <span className="text-gray-500">Host: </span>
+                                <span className="text-gray-900">{record.domain}</span>
+                              </div>
+                              <div className="font-mono text-sm">
+                                <span className="text-gray-500">Value: </span>
+                                <span className="text-gray-900 break-all">{record.value}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="mt-3 text-xs text-blue-600">
+                          DNS changes may take up to 48 hours to propagate. Click the refresh button to check status.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

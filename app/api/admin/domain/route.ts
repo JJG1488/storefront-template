@@ -1,18 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
-import { verifyAuthFromRequest } from "@/lib/admin-tokens";
+import { verifyAuthFromRequest, getAdminPassword } from "@/lib/admin-tokens";
 
 export const dynamic = "force-dynamic";
+
+interface DomainVerification {
+  type: string;
+  domain: string;
+  value: string;
+  reason: string;
+}
 
 interface DomainStatus {
   subdomain: string;
   subdomainUrl: string;
   customDomain: string | null;
-  status: "none" | "pending" | "configured" | "error";
+  status: "none" | "pending" | "verifying" | "configured" | "error";
+  verified: boolean;
+  verification: DomainVerification[];
   message?: string;
 }
 
-// GET - Fetch current domain configuration
+const PLATFORM_API_URL = process.env.PLATFORM_API_URL || "https://gosovereign.io";
+
+async function callPlatformAPI(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const storeId = getStoreId();
+  const adminPassword = getAdminPassword();
+
+  if (!storeId || !adminPassword) {
+    throw new Error("Store not configured");
+  }
+
+  const url = `${PLATFORM_API_URL}/api/stores/${storeId}/domain${endpoint}`;
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${adminPassword}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+// GET - Fetch current domain configuration and verification status
 export async function GET(request: NextRequest) {
   if (isBuildTime()) {
     return NextResponse.json({ domain: null });
@@ -40,30 +74,59 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error || !store) {
-      return NextResponse.json(
-        { error: "Store not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
 
-    // Determine status based on custom_domain field
-    let status: DomainStatus["status"] = "none";
-    let message: string | undefined;
-
-    if (store.custom_domain) {
-      // For now, mark as "pending" since we need manual verification
-      // In the future, this could check DNS or Vercel API
-      status = "pending";
-      message = "Domain saved. Configure your DNS records and contact support to complete setup.";
-    }
-
+    // Build base response
     const response: DomainStatus = {
       subdomain: store.subdomain || "",
-      subdomainUrl: store.deployment_url || `https://${store.subdomain}.gosovereign.io`,
+      subdomainUrl:
+        store.deployment_url || `https://${store.subdomain}.gosovereign.io`,
       customDomain: store.custom_domain,
-      status,
-      message,
+      status: "none",
+      verified: false,
+      verification: [],
     };
+
+    // If custom domain is set, check verification status via platform API
+    if (store.custom_domain) {
+      try {
+        const platformResponse = await callPlatformAPI(
+          `?domain=${encodeURIComponent(store.custom_domain)}`
+        );
+
+        if (platformResponse.ok) {
+          const data = await platformResponse.json();
+
+          response.verified = data.verified || false;
+          response.verification = data.verification || [];
+
+          if (data.verified) {
+            response.status = "configured";
+            response.message = "Domain is configured and SSL is active.";
+          } else if (data.verification && data.verification.length > 0) {
+            response.status = "verifying";
+            response.message =
+              "Domain added to Vercel. Configure your DNS records below.";
+          } else {
+            response.status = "pending";
+            response.message =
+              "Domain saved. Click 'Add to Vercel' to configure.";
+          }
+        } else {
+          // Platform API error - domain may not be added to Vercel yet
+          response.status = "pending";
+          response.message =
+            "Domain saved. Click 'Add to Vercel' to configure.";
+        }
+      } catch (err) {
+        // Platform unreachable - show pending status
+        console.error("Platform API error:", err);
+        response.status = "pending";
+        response.message =
+          "Domain saved. Configure your DNS records and contact support.";
+      }
+    }
 
     return NextResponse.json(response);
   } catch (error) {
@@ -75,10 +138,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Save custom domain
+// POST - Save custom domain and add to Vercel
 export async function POST(request: NextRequest) {
   if (isBuildTime()) {
-    return NextResponse.json({ error: "Not available during build" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Not available during build" },
+      { status: 400 }
+    );
   }
 
   if (!(await verifyAuthFromRequest(request))) {
@@ -97,20 +163,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { customDomain } = body;
+    const { customDomain, addToVercel } = body;
 
     // Validate domain format
     if (customDomain) {
-      const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+      const domainRegex =
+        /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
       if (!domainRegex.test(customDomain)) {
         return NextResponse.json(
-          { error: "Invalid domain format. Use format: example.com or shop.example.com" },
+          {
+            error:
+              "Invalid domain format. Use format: example.com or shop.example.com",
+          },
           { status: 400 }
         );
       }
     }
 
-    // Update the store's custom_domain
+    // Save to local database first
     const { error } = await supabase
       .from("stores")
       .update({
@@ -122,7 +192,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Failed to save domain:", error);
 
-      // Check for unique constraint violation
       if (error.code === "23505") {
         return NextResponse.json(
           { error: "This domain is already in use by another store" },
@@ -136,10 +205,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If addToVercel flag is set, call platform API to add domain
+    if (customDomain && addToVercel) {
+      try {
+        const platformResponse = await callPlatformAPI("", {
+          method: "POST",
+          body: JSON.stringify({ domain: customDomain }),
+        });
+
+        const data = await platformResponse.json();
+
+        if (!platformResponse.ok) {
+          return NextResponse.json({
+            success: true,
+            message: data.error || "Domain saved but failed to add to Vercel.",
+            verification: [],
+            verified: false,
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: data.verified
+            ? "Domain configured and SSL is active!"
+            : "Domain added to Vercel. Configure your DNS records to complete setup.",
+          verification: data.verification || [],
+          verified: data.verified || false,
+        });
+      } catch (err) {
+        console.error("Platform API error:", err);
+        return NextResponse.json({
+          success: true,
+          message:
+            "Domain saved. Contact support to complete Vercel configuration.",
+          verification: [],
+          verified: false,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: customDomain
-        ? "Domain saved. Configure your DNS records and contact support to complete setup."
+        ? "Domain saved. Click 'Add to Vercel' to configure."
         : "Custom domain removed.",
     });
   } catch (error) {
@@ -154,7 +262,10 @@ export async function POST(request: NextRequest) {
 // DELETE - Remove custom domain
 export async function DELETE(request: NextRequest) {
   if (isBuildTime()) {
-    return NextResponse.json({ error: "Not available during build" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Not available during build" },
+      { status: 400 }
+    );
   }
 
   if (!(await verifyAuthFromRequest(request))) {
@@ -172,6 +283,27 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Get current domain before deleting
+    const { data: store } = await supabase
+      .from("stores")
+      .select("custom_domain")
+      .eq("id", storeId)
+      .single();
+
+    // Remove from Vercel first
+    if (store?.custom_domain) {
+      try {
+        await callPlatformAPI(
+          `?domain=${encodeURIComponent(store.custom_domain)}`,
+          { method: "DELETE" }
+        );
+      } catch (err) {
+        console.error("Failed to remove domain from Vercel:", err);
+        // Continue with local deletion anyway
+      }
+    }
+
+    // Clear from database
     const { error } = await supabase
       .from("stores")
       .update({
