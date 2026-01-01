@@ -85,7 +85,60 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   // Get customer details from session
   const customerEmail = session.customer_details?.email || "";
   const customerName = session.customer_details?.name || "";
-  const shippingAddress = session.shipping_details?.address || {};
+
+  // Check for saved address in metadata (from logged-in customer checkout)
+  const customerId = session.metadata?.customer_id || null;
+  const savedAddressJson = session.metadata?.saved_address_json;
+
+  let shippingAddress: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  };
+  let shippingName = customerName;
+
+  if (savedAddressJson) {
+    // Use saved address from metadata (customer selected a saved address)
+    try {
+      const savedAddr = JSON.parse(savedAddressJson);
+      shippingAddress = {
+        line1: savedAddr.line1,
+        line2: savedAddr.line2 || undefined,
+        city: savedAddr.city,
+        state: savedAddr.state || undefined,
+        postal_code: savedAddr.postal_code,
+        country: savedAddr.country,
+      };
+      // Use name from saved address
+      shippingName = `${savedAddr.first_name} ${savedAddr.last_name}`;
+      console.log("[Webhook] Using saved address for:", shippingName);
+    } catch (e) {
+      console.error("[Webhook] Failed to parse saved address:", e);
+      const stripeAddr = session.shipping_details?.address;
+      shippingAddress = {
+        line1: stripeAddr?.line1 || undefined,
+        line2: stripeAddr?.line2 || undefined,
+        city: stripeAddr?.city || undefined,
+        state: stripeAddr?.state || undefined,
+        postal_code: stripeAddr?.postal_code || undefined,
+        country: stripeAddr?.country || undefined,
+      };
+    }
+  } else {
+    // Use Stripe-collected address (customer entered a new address)
+    const stripeAddr = session.shipping_details?.address;
+    shippingAddress = {
+      line1: stripeAddr?.line1 || undefined,
+      line2: stripeAddr?.line2 || undefined,
+      city: stripeAddr?.city || undefined,
+      state: stripeAddr?.state || undefined,
+      postal_code: stripeAddr?.postal_code || undefined,
+      country: stripeAddr?.country || undefined,
+    };
+  }
 
   // Calculate totals
   const subtotal = session.amount_subtotal || 0;
@@ -95,7 +148,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   const discountAmount = (session.total_details?.amount_discount || 0);
   const couponCode = session.metadata?.coupon_code || null;
 
-  // Create order
+  // Create order (link to customer account if logged in)
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -103,8 +156,10 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       stripe_session_id: session.id,
       stripe_payment_intent_id: session.payment_intent as string,
       customer_email: customerEmail,
-      customer_name: customerName,
+      customer_name: shippingName || customerName,
       shipping_address: shippingAddress,
+      // Link order to customer account if logged in
+      customer_id: customerId || null,
       subtotal,
       total,
       tax,

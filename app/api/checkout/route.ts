@@ -52,6 +52,85 @@ interface Coupon {
   is_active: boolean;
 }
 
+interface SavedAddress {
+  id: string;
+  first_name: string;
+  last_name: string;
+  address_line1: string;
+  address_line2: string | null;
+  city: string;
+  state: string | null;
+  postal_code: string;
+  country: string;
+}
+
+interface CustomerAndAddress {
+  customerId: string | null;
+  customerEmail: string | null;
+  address: SavedAddress | null;
+}
+
+async function getCustomerAndAddress(
+  token: string | null,
+  addressId: string | null
+): Promise<CustomerAndAddress> {
+  if (!token) {
+    return { customerId: null, customerEmail: null, address: null };
+  }
+
+  const supabase = getSupabaseAdmin();
+  const storeId = getStoreId();
+
+  if (!supabase || !storeId) {
+    return { customerId: null, customerEmail: null, address: null };
+  }
+
+  // Verify customer session
+  const { data: session } = await supabase
+    .from("customer_sessions")
+    .select("customer_id, expires_at")
+    .eq("token", token)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return { customerId: null, customerEmail: null, address: null };
+  }
+
+  // Get customer data
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("id, email, store_id")
+    .eq("id", session.customer_id)
+    .single();
+
+  if (!customer || customer.store_id !== storeId) {
+    return { customerId: null, customerEmail: null, address: null };
+  }
+
+  // If no address ID, just return customer info
+  if (!addressId) {
+    return {
+      customerId: customer.id,
+      customerEmail: customer.email,
+      address: null,
+    };
+  }
+
+  // Fetch the saved address (verify it belongs to this customer)
+  const { data: address } = await supabase
+    .from("customer_addresses")
+    .select("id, first_name, last_name, address_line1, address_line2, city, state, postal_code, country")
+    .eq("id", addressId)
+    .eq("customer_id", customer.id)
+    .single();
+
+  return {
+    customerId: customer.id,
+    customerEmail: customer.email,
+    address: address || null,
+  };
+}
+
 async function validateAndGetCoupon(code: string, cartTotalCents: number): Promise<{ valid: boolean; error?: string; coupon?: Coupon }> {
   const supabase = getSupabaseAdmin();
   const storeId = getStoreId();
@@ -122,14 +201,28 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const body = await request.json();
-    const { items, couponCode } = body as { items: CartItem[]; couponCode?: string };
+    const { items, couponCode, savedAddressId } = body as {
+      items: CartItem[];
+      couponCode?: string;
+      savedAddressId?: string | null;
+    };
     const store = getStoreConfig();
+
+    // Get auth token from header for customer pre-fill
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "") || null;
+
+    // Verify customer and get saved address if applicable
+    const { customerId, customerEmail, address: savedAddress } =
+      await getCustomerAndAddress(token, savedAddressId || null);
 
     console.log("[Checkout] Processing checkout", {
       itemCount: items?.length,
       storeId: store.id,
       hasStripeAccount: !!store.stripeAccountId,
       couponCode: couponCode || null,
+      customerId: customerId || null,
+      hasSavedAddress: !!savedAddress,
     });
 
     if (!items || items.length === 0) {
@@ -301,8 +394,29 @@ export async function POST(request: NextRequest): Promise<Response> {
           coupon_id: validatedCoupon.id,
           coupon_code: validatedCoupon.code,
         }),
+        // Include customer and address info in metadata for webhook
+        ...(customerId && { customer_id: customerId }),
+        ...(savedAddress && {
+          saved_address_id: savedAddress.id,
+          // Store address details for webhook (Stripe metadata is string-only)
+          saved_address_json: JSON.stringify({
+            first_name: savedAddress.first_name,
+            last_name: savedAddress.last_name,
+            line1: savedAddress.address_line1,
+            line2: savedAddress.address_line2,
+            city: savedAddress.city,
+            state: savedAddress.state,
+            postal_code: savedAddress.postal_code,
+            country: savedAddress.country,
+          }),
+        }),
       },
     };
+
+    // Pre-fill customer email if logged in
+    if (customerEmail) {
+      sessionParams.customer_email = customerEmail;
+    }
 
     // Add discount if coupon is applied
     if (stripeCouponId) {
@@ -313,11 +427,17 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Add shipping address collection only if:
     // 1. Shipping is enabled for the store
     // 2. There are physical (non-digital) items in the cart
+    // 3. No saved address was selected (skip Stripe form for faster checkout)
     if (hasPhysicalItems && store.shippingEnabled && store.shippingCountries.length > 0) {
-      sessionParams.shipping_address_collection = {
-        allowed_countries: store.shippingCountries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
-      };
-      console.log("[Checkout] Adding shipping collection - cart has physical items");
+      if (!savedAddress) {
+        // No saved address - use Stripe's address collection form
+        sessionParams.shipping_address_collection = {
+          allowed_countries: store.shippingCountries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
+        };
+        console.log("[Checkout] Showing Stripe shipping form - no saved address selected");
+      } else {
+        console.log("[Checkout] Skipping Stripe shipping form - using saved address:", savedAddress.id);
+      }
     } else if (!hasPhysicalItems) {
       console.log("[Checkout] Skipping shipping collection - all items are digital");
     }

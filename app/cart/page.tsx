@@ -1,10 +1,12 @@
 "use client";
 
 import { useCart } from "@/components/CartContext";
+import { useCustomerAuth } from "@/components/CustomerAuthContext";
 import { formatPrice } from "@/data/products";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { CouponInput } from "@/components/CouponInput";
+import { AddressSelector } from "@/components/AddressSelector";
 
 interface StockIssue {
   productId: string;
@@ -25,9 +27,11 @@ interface AppliedCoupon {
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total } = useCart();
+  const { isAuthenticated, isLoading: authLoading } = useCustomerAuth();
   const [loading, setLoading] = useState(false);
   const [stockErrors, setStockErrors] = useState<StockIssue[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   // Calculate discount amount based on current cart total
   const discountAmount = appliedCoupon
@@ -43,9 +47,16 @@ export default function CartPage() {
     setStockErrors([]);
 
     try {
+      // Get customer token for authenticated checkout
+      const token = localStorage.getItem("customer_token");
+
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Include auth token if available
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
           items: items.map((item) => ({
             productId: item.product.id,
@@ -54,6 +65,8 @@ export default function CartPage() {
             variantInfo: item.variant || null,
           })),
           couponCode: appliedCoupon?.code || null,
+          // Include saved address selection
+          savedAddressId: selectedAddressId || null,
         }),
       });
 
@@ -212,6 +225,16 @@ export default function CartPage() {
       </div>
 
       <div className="mt-8 space-y-4">
+        {/* Address Selection for Logged-in Customers */}
+        {!authLoading && isAuthenticated && (
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <AddressSelector
+              selectedAddressId={selectedAddressId}
+              onSelect={setSelectedAddressId}
+            />
+          </div>
+        )}
+
         {/* Coupon Input */}
         <div className="p-4 bg-gray-50 rounded-lg">
           <p className="text-sm font-medium text-gray-700 mb-2">Have a coupon?</p>
