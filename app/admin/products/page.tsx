@@ -93,12 +93,20 @@ export default function ProductsPage() {
             Limit reached - Upgrade to add more
           </span>
         ) : (
-          <Link
-            href="/admin/products/new"
-            className="bg-brand text-white px-4 py-2 rounded-lg hover:opacity-90 w-full sm:w-auto text-center"
-          >
-            Add Product
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Link
+              href="/admin/products/import"
+              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-center"
+            >
+              Import CSV
+            </Link>
+            <Link
+              href="/admin/products/new"
+              className="bg-brand text-white px-4 py-2 rounded-lg hover:opacity-90 text-center"
+            >
+              Add Product
+            </Link>
+          </div>
         )}
       </div>
 
