@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { Mail } from "lucide-react";
 
 interface OrderItem {
   id: string;
@@ -347,22 +348,22 @@ export default function OrderDetailPage() {
               </button>
 
               {/* Shipping Notification */}
-              <div className="border-t pt-4 mt-4">
+              <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
                 <button
                   onClick={handleSendNotification}
                   disabled={sendingNotification || status === "cancelled"}
-                  className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                 >
                   {sendingNotification ? (
                     "Sending..."
                   ) : (
                     <>
-                      <span>&#128230;</span>
+                      <Mail className="w-4 h-4" />
                       Send Shipping Notification
                     </>
                   )}
                 </button>
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center">
                   Sends email to customer with tracking info
                 </p>
 
