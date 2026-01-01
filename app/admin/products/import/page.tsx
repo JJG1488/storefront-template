@@ -18,9 +18,13 @@ import {
   parseShopifyCSV,
   type ImportProduct,
 } from "@/lib/shopify-csv-parser";
+import {
+  isWooCommerceFormat,
+  parseWooCommerceCSV,
+} from "@/lib/woocommerce-csv-parser";
 
 type ImportStep = "upload" | "mapping" | "preview" | "importing" | "complete";
-type CSVFormat = "auto" | "standard" | "shopify";
+type CSVFormat = "auto" | "standard" | "shopify" | "woocommerce";
 
 interface ImportResult {
   success: number;
@@ -48,7 +52,7 @@ export default function ImportProductsPage() {
   const [step, setStep] = useState<ImportStep>("upload");
   const [dragActive, setDragActive] = useState(false);
   const [csvFormat, setCsvFormat] = useState<CSVFormat>("auto");
-  const [detectedFormat, setDetectedFormat] = useState<"standard" | "shopify" | null>(null);
+  const [detectedFormat, setDetectedFormat] = useState<"standard" | "shopify" | "woocommerce" | null>(null);
   const [csvData, setCsvData] = useState<CSVParseResult | null>(null);
   const [csvContent, setCsvContent] = useState<string>("");
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
@@ -86,12 +90,32 @@ export default function ImportProductsPage() {
 
       // Detect format
       const isShopify = isShopifyFormat(parsed.headers);
-      setDetectedFormat(isShopify ? "shopify" : "standard");
+      const isWooCommerce = isWooCommerceFormat(parsed.headers);
 
-      if (isShopify && csvFormat !== "standard") {
-        // Shopify format detected - skip mapping step, go directly to preview
+      if (isShopify) {
+        setDetectedFormat("shopify");
+      } else if (isWooCommerce) {
+        setDetectedFormat("woocommerce");
+      } else {
+        setDetectedFormat("standard");
+      }
+
+      // Handle based on detected or selected format
+      const useShopify = csvFormat === "shopify" || (csvFormat === "auto" && isShopify);
+      const useWooCommerce = csvFormat === "woocommerce" || (csvFormat === "auto" && isWooCommerce && !isShopify);
+
+      if (useShopify) {
+        // Shopify format - skip mapping step, go directly to preview
         const { products: shopifyProds, errors, variantCount } = parseShopifyCSV(content);
         setShopifyProducts(shopifyProds);
+        setValidationErrors(errors);
+        setTotalVariants(variantCount);
+        setError("");
+        setStep("preview");
+      } else if (useWooCommerce) {
+        // WooCommerce format - skip mapping step, go directly to preview
+        const { products: wooProds, errors, variantCount } = parseWooCommerceCSV(content);
+        setShopifyProducts(wooProds); // Reuse shopifyProducts state for woocommerce products
         setValidationErrors(errors);
         setTotalVariants(variantCount);
         setError("");
@@ -138,8 +162,10 @@ export default function ImportProductsPage() {
   };
 
   // Determine which products to import based on format
-  const isShopifyImport = detectedFormat === "shopify" && csvFormat !== "standard";
-  const productsToImport = isShopifyImport ? shopifyProducts : products;
+  const isShopifyImport = csvFormat === "shopify" || (csvFormat === "auto" && detectedFormat === "shopify");
+  const isWooCommerceImport = csvFormat === "woocommerce" || (csvFormat === "auto" && detectedFormat === "woocommerce");
+  const isPlatformImport = isShopifyImport || isWooCommerceImport;
+  const productsToImport = isPlatformImport ? shopifyProducts : products;
 
   // Start import
   const handleImport = async () => {
@@ -307,6 +333,7 @@ export default function ImportProductsPage() {
                   <option value="auto">Auto-detect</option>
                   <option value="standard">Standard CSV</option>
                   <option value="shopify">Shopify Export</option>
+                  <option value="woocommerce">WooCommerce Export</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -324,8 +351,20 @@ export default function ImportProductsPage() {
               </div>
             )}
 
+            {csvFormat === "woocommerce" && (
+              <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg mb-4">
+                <ShoppingBag className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-purple-800">WooCommerce Import Mode</p>
+                  <p className="text-sm text-purple-700">
+                    Upload your WooCommerce product export CSV. Variable products and their variations will be imported automatically.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <h4 className="font-medium mb-2 text-sm">Supported Formats</h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+            <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
               <div>
                 <p className="font-medium text-gray-700 mb-1">Standard CSV</p>
                 <ul className="space-y-0.5">
@@ -340,6 +379,14 @@ export default function ImportProductsPage() {
                   <li>Handle, Title, Body (HTML)</li>
                   <li>Variant Price, Variant SKU</li>
                   <li>Option1-3 Name/Value</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium text-gray-700 mb-1">WooCommerce Export</p>
+                <ul className="space-y-0.5">
+                  <li>Name, Type, SKU</li>
+                  <li>Regular price, Sale price</li>
+                  <li>Attribute 1-10 Name/Value</li>
                 </ul>
               </div>
             </div>
@@ -450,6 +497,12 @@ export default function ImportProductsPage() {
                 Shopify Format
               </span>
             )}
+            {isWooCommerceImport && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                <ShoppingBag className="w-4 h-4" />
+                WooCommerce Format
+              </span>
+            )}
           </div>
 
           {validationErrors.length > 0 && (
@@ -480,14 +533,14 @@ export default function ImportProductsPage() {
           <div className="mb-6">
             <p className="text-gray-600">
               Ready to import <strong>{productsToImport.length}</strong> products
-              {isShopifyImport && totalVariants > 0 && (
+              {isPlatformImport && totalVariants > 0 && (
                 <> with <strong>{totalVariants}</strong> variants</>
               )}.
             </p>
           </div>
 
-          {/* Products Table - Shopify format with variants */}
-          {isShopifyImport ? (
+          {/* Products Table - Platform format (Shopify/WooCommerce) with variants */}
+          {isPlatformImport ? (
             <div className="overflow-x-auto mb-6">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
@@ -582,17 +635,17 @@ export default function ImportProductsPage() {
 
           <div className="flex justify-between">
             <button
-              onClick={() => isShopifyImport ? handleReset() : setStep("mapping")}
+              onClick={() => isPlatformImport ? handleReset() : setStep("mapping")}
               className="px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
-              {isShopifyImport ? "Start Over" : "Back to Mapping"}
+              {isPlatformImport ? "Start Over" : "Back to Mapping"}
             </button>
             <button
               onClick={handleImport}
               className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90"
             >
               Import {productsToImport.length} Products
-              {isShopifyImport && totalVariants > 0 && ` (${totalVariants} variants)`}
+              {isPlatformImport && totalVariants > 0 && ` (${totalVariants} variants)`}
             </button>
           </div>
         </div>
@@ -605,7 +658,7 @@ export default function ImportProductsPage() {
             <Loader2 className="w-12 h-12 mx-auto text-brand animate-spin mb-4" />
             <h2 className="text-lg font-semibold mb-2">Importing Products...</h2>
             <p className="text-gray-600 mb-6">
-              {isShopifyImport && totalVariants > 0
+              {isPlatformImport && totalVariants > 0
                 ? `Importing ${productsToImport.length} products with ${totalVariants} variants...`
                 : "Please wait while we import your products and download images."
               }
