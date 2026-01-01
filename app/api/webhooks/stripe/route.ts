@@ -133,6 +133,8 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   for (const item of lineItems.data) {
     const productData = item.price?.product as Stripe.Product;
     const productId = productData?.metadata?.product_id;
+    const variantId = productData?.metadata?.variant_id || null;
+    const variantName = productData?.metadata?.variant_name || null;
     const isDigital = productData?.metadata?.is_digital === "true";
     const quantity = item.quantity || 1;
     const productName = item.description || productData?.name || "Unknown Product";
@@ -144,11 +146,17 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       downloadToken = crypto.randomUUID();
     }
 
+    // Build variant info for order item
+    const variantInfo = variantId && variantName
+      ? { id: variantId, name: variantName }
+      : null;
+
     // Create order item
     const { data: orderItem } = await supabase.from("order_items").insert({
       order_id: order.id,
       product_id: productId || null,
       product_name: productName,
+      variant_info: variantInfo,
       quantity,
       unit_price: priceAtTime,
       download_url: downloadToken, // Store download token for digital products
@@ -163,9 +171,15 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       download_url: downloadToken || undefined,
     });
 
-    // Only decrement inventory for physical products
+    // Decrement inventory for physical products
     if (productId && !isDigital) {
-      await decrementInventory(supabase, productId, quantity);
+      if (variantId) {
+        // Decrement variant inventory
+        await decrementVariantInventory(supabase, variantId, quantity);
+      } else {
+        // Decrement product inventory
+        await decrementInventory(supabase, productId, quantity);
+      }
     }
   }
 
@@ -271,6 +285,79 @@ async function decrementInventory(
     await sendLowStockAlert({
       id: productId,
       name: product.name,
+      currentStock: newCount,
+      threshold: lowStockThreshold,
+    });
+  }
+}
+
+async function decrementVariantInventory(
+  supabase: ReturnType<typeof getSupabase>,
+  variantId: string,
+  quantity: number
+) {
+  if (!supabase) return;
+
+  // Get current variant inventory and product name for alerts
+  const { data: variant } = await supabase
+    .from("product_variants")
+    .select("inventory_count, track_inventory, product_id")
+    .eq("id", variantId)
+    .single();
+
+  if (!variant || !variant.track_inventory || variant.inventory_count === null) {
+    return; // No inventory tracking for this variant
+  }
+
+  // Get product name for low stock alert
+  const { data: product } = await supabase
+    .from("products")
+    .select("name")
+    .eq("id", variant.product_id)
+    .single();
+
+  // Get low stock threshold from store settings (default to 5)
+  const storeId = getStoreId();
+  let lowStockThreshold = 5;
+  let lowStockEmailsEnabled = true;
+
+  if (storeId) {
+    const { data: store } = await supabase
+      .from("stores")
+      .select("config")
+      .eq("id", storeId)
+      .single();
+
+    if (store?.config) {
+      lowStockThreshold = store.config.lowStockThreshold ?? 5;
+      lowStockEmailsEnabled = store.config.lowStockEmailsEnabled ?? true;
+    }
+  }
+
+  const oldCount = variant.inventory_count;
+  // Decrement inventory (don't go below 0)
+  const newCount = Math.max(0, oldCount - quantity);
+
+  await supabase
+    .from("product_variants")
+    .update({ inventory_count: newCount })
+    .eq("id", variantId);
+
+  console.log(
+    `Variant inventory updated for ${variantId}: ${oldCount} -> ${newCount}`
+  );
+
+  // Check if inventory just crossed the low stock threshold
+  if (
+    lowStockEmailsEnabled &&
+    oldCount > lowStockThreshold &&
+    newCount <= lowStockThreshold &&
+    product
+  ) {
+    console.log(`Low stock threshold crossed for variant ${variantId}: ${newCount} <= ${lowStockThreshold}`);
+    await sendLowStockAlert({
+      id: variantId,
+      name: `${product.name} (Variant)`,
       currentStock: newCount,
       threshold: lowStockThreshold,
     });

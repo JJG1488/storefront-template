@@ -8,7 +8,9 @@ import { CouponInput } from "@/components/CouponInput";
 
 interface StockIssue {
   productId: string;
+  variantId?: string;
   productName: string;
+  variantName?: string;
   requested: number;
   available: number;
 }
@@ -48,6 +50,8 @@ export default function CartPage() {
           items: items.map((item) => ({
             productId: item.product.id,
             quantity: item.quantity,
+            variantId: item.variant?.id || null,
+            variantInfo: item.variant || null,
           })),
           couponCode: appliedCoupon?.code || null,
         }),
@@ -75,8 +79,14 @@ export default function CartPage() {
   };
 
   // Helper to check if an item has a stock error
-  const getStockError = (productId: string) =>
-    stockErrors.find((e) => e.productId === productId);
+  const getStockError = (productId: string, variantId?: string) =>
+    stockErrors.find(
+      (e) => e.productId === productId && e.variantId === variantId
+    );
+
+  // Generate unique key for cart item
+  const getItemKey = (productId: string, variantId?: string) =>
+    variantId ? `${productId}:${variantId}` : productId;
 
   if (items.length === 0) {
     return (
@@ -118,10 +128,13 @@ export default function CartPage() {
 
       <div className="space-y-4">
         {items.map((item) => {
-          const stockError = getStockError(item.product.id);
+          const stockError = getStockError(item.product.id, item.variant?.id);
+          const itemKey = getItemKey(item.product.id, item.variant?.id);
+          // Calculate item price including variant adjustment
+          const itemPrice = item.product.price + (item.variant?.price_adjustment || 0);
           return (
             <div
-              key={item.product.id}
+              key={itemKey}
               className={`p-4 border rounded-lg ${
                 stockError ? "border-red-300 bg-red-50" : ""
               }`}
@@ -137,13 +150,18 @@ export default function CartPage() {
                 )}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{item.product.name}</h3>
-                  <p className="text-gray-600">{formatPrice(item.product.price)}</p>
+                  {/* Show variant name if present */}
+                  {item.variant && (
+                    <p className="text-sm text-gray-500">{item.variant.name}</p>
+                  )}
+                  <p className="text-gray-600">{formatPrice(itemPrice)}</p>
                   {stockError && (
                     <p className="text-red-600 text-sm mt-1">
                       Only {stockError.available} in stock
                     </p>
                   )}
-                  {item.product.track_inventory &&
+                  {!item.variant &&
+                    item.product.track_inventory &&
                     item.product.inventory_count !== null &&
                     !stockError && (
                       <p className="text-gray-500 text-sm mt-1">
@@ -158,7 +176,7 @@ export default function CartPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() =>
-                      updateQuantity(item.product.id, item.quantity - 1)
+                      updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)
                     }
                     className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-100"
                   >
@@ -167,9 +185,10 @@ export default function CartPage() {
                   <span className="w-8 text-center">{item.quantity}</span>
                   <button
                     onClick={() =>
-                      updateQuantity(item.product.id, item.quantity + 1)
+                      updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)
                     }
                     disabled={
+                      !item.variant &&
                       item.product.track_inventory &&
                       item.product.inventory_count !== null &&
                       item.quantity >= item.product.inventory_count
@@ -180,7 +199,7 @@ export default function CartPage() {
                   </button>
                 </div>
                 <button
-                  onClick={() => removeItem(item.product.id)}
+                  onClick={() => removeItem(item.product.id, item.variant?.id)}
                   className="flex items-center gap-1 text-red-500 hover:text-red-700 p-2 -mr-2"
                 >
                   <Trash2 className="w-5 h-5" />

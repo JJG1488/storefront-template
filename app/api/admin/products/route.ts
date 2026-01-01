@@ -147,6 +147,8 @@ export async function POST(request: NextRequest) {
         status: body.status || "active",
         inventory_count: body.inventory_count ?? null,
         track_inventory: body.track_inventory ?? false,
+        has_variants: body.has_variants ?? false,
+        variant_options: body.variant_options ?? [],
       })
       .select()
       .single();

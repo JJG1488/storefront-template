@@ -3,6 +3,7 @@ import { getProduct, formatPrice } from "@/data/products";
 import { getProductReviews, getProductRating } from "@/lib/reviews";
 import { getStoreSettingsFromDB } from "@/lib/settings";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { ProductWithVariants } from "@/components/ProductWithVariants";
 import { ProductTabs } from "@/components/ProductTabs";
 import { Download } from "lucide-react";
 
@@ -88,21 +89,28 @@ export default async function ProductPage({ params }: Props) {
             </div>
           )}
 
-          <p className="text-2xl font-semibold text-brand mb-4">
-            {formatPrice(product.price)}
-          </p>
-          <p className="text-gray-600 mb-8">{product.description}</p>
-
-          {/* Only show out of stock for physical products when tracking inventory AND count is 0 */}
-          {!product.is_digital && product.track_inventory && product.inventory_count === 0 ? (
-            <button
-              disabled
-              className="w-full py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
-            >
-              Out of Stock
-            </button>
+          {/* Product with variants uses client component for dynamic price */}
+          {product.has_variants ? (
+            <ProductWithVariants product={product} lowStockThreshold={lowStockThreshold} />
           ) : (
-            <AddToCartButton product={product} lowStockThreshold={lowStockThreshold} />
+            <>
+              <p className="text-2xl font-semibold text-brand mb-4">
+                {formatPrice(product.price)}
+              </p>
+              <p className="text-gray-600 mb-8">{product.description}</p>
+
+              {/* Only show out of stock for physical products when tracking inventory AND count is 0 */}
+              {!product.is_digital && product.track_inventory && product.inventory_count === 0 ? (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
+                >
+                  Out of Stock
+                </button>
+              ) : (
+                <AddToCartButton product={product} lowStockThreshold={lowStockThreshold} />
+              )}
+            </>
           )}
         </div>
       </div>

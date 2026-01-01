@@ -11,6 +11,8 @@ export interface Product {
   // Digital product fields
   is_digital: boolean;
   digital_file_url: string | null;
+  // Variant fields
+  has_variants: boolean;
 }
 
 // Fetch products from Supabase
@@ -66,6 +68,7 @@ export async function getProducts(): Promise<Product[]> {
       inventory_count: p.inventory_count,
       is_digital: p.is_digital ?? false,
       digital_file_url: p.digital_file_url || null,
+      has_variants: p.has_variants ?? false,
     }));
 
     // Filter out out-of-stock products if setting is enabled
@@ -125,6 +128,7 @@ export async function getProduct(id: string): Promise<Product | null> {
       inventory_count: data.inventory_count,
       is_digital: data.is_digital ?? false,
       digital_file_url: data.digital_file_url || null,
+      has_variants: data.has_variants ?? false,
     };
   } catch (err) {
     console.error("Failed to fetch product:", err);
@@ -179,6 +183,7 @@ export async function getProductAdmin(id: string): Promise<Product | null> {
       inventory_count: data.inventory_count,
       is_digital: data.is_digital ?? false,
       digital_file_url: data.digital_file_url || null,
+      has_variants: data.has_variants ?? false,
     };
   } catch (err) {
     console.error("[getProductAdmin] Failed to fetch product:", err);

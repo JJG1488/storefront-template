@@ -68,6 +68,8 @@ export async function PUT(
         status: body.status,
         inventory_count: body.inventory_count,
         track_inventory: body.track_inventory,
+        has_variants: body.has_variants ?? false,
+        variant_options: body.variant_options ?? [],
       })
       .eq("id", id)
       .eq("store_id", storeId)

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FileUpload } from "@/components/FileUpload";
 import { AIDescriptionButton } from "@/components/AIDescriptionButton";
+import { VariantEditor, VariantOption } from "@/components/VariantEditor";
 import { Download } from "lucide-react";
 
 interface ProductImage {
@@ -26,6 +27,9 @@ interface Product {
   // Digital product fields
   is_digital: boolean;
   digital_file_url: string | null;
+  // Variant fields
+  has_variants: boolean;
+  variant_options: VariantOption[];
 }
 
 export default function EditProductPage() {
@@ -52,6 +56,10 @@ export default function EditProductPage() {
   const [digitalFileName, setDigitalFileName] = useState("");
   const [digitalFileSize, setDigitalFileSize] = useState(0);
 
+  // Variant fields
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variantOptions, setVariantOptions] = useState<VariantOption[]>([]);
+
   useEffect(() => {
     async function loadProduct() {
       try {
@@ -75,6 +83,9 @@ export default function EditProductPage() {
         // Set digital product fields
         setIsDigital(product.is_digital || false);
         setDigitalFilePath(product.digital_file_url || "");
+        // Set variant fields
+        setHasVariants(product.has_variants || false);
+        setVariantOptions(product.variant_options || []);
       } catch (err) {
         console.error("Failed to load product:", err);
         setError("Failed to load product");
@@ -128,12 +139,16 @@ export default function EditProductPage() {
           description: description.trim(),
           price: parseFloat(price) || 0,
           status,
-          track_inventory: isDigital ? false : trackInventory, // Digital products don't track inventory
-          inventory_count: isDigital ? null : (trackInventory ? parseInt(inventoryCount) || 0 : null),
+          // For products with variants, inventory is tracked per-variant
+          track_inventory: hasVariants ? false : (isDigital ? false : trackInventory),
+          inventory_count: hasVariants ? null : (isDigital ? null : (trackInventory ? parseInt(inventoryCount) || 0 : null)),
           images: imageUrl ? [{ url: imageUrl, alt: name.trim(), position: 0 }] : [],
           // Digital product fields
           is_digital: isDigital,
           digital_file_url: isDigital ? digitalFilePath : null,
+          // Variant fields
+          has_variants: hasVariants,
+          variant_options: variantOptions,
         }),
       });
 
@@ -311,8 +326,8 @@ export default function EditProductPage() {
             </select>
           </div>
 
-          {/* Inventory tracking - hidden for digital products */}
-          {!isDigital && (
+          {/* Inventory tracking - hidden for digital products and products with variants */}
+          {!isDigital && !hasVariants && (
             <div className="border-t pt-6">
               <label className="flex items-center gap-3">
                 <input
@@ -339,6 +354,18 @@ export default function EditProductPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Variant Editor - hidden for digital products */}
+          {!isDigital && (
+            <VariantEditor
+              productId={productId}
+              basePrice={Math.round((parseFloat(price) || 0) * 100)}
+              hasVariants={hasVariants}
+              variantOptions={variantOptions}
+              onVariantOptionsChange={setVariantOptions}
+              onHasVariantsChange={setHasVariants}
+            />
           )}
         </div>
 

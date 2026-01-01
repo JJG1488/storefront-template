@@ -1,31 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "./CartContext";
+import { useCart, VariantInfo } from "./CartContext";
 import type { Product } from "@/data/products";
 
 interface Props {
   product: Product;
   lowStockThreshold?: number;
+  selectedVariant?: VariantInfo | null;
+  variantStock?: number | null;
+  variantTrackInventory?: boolean;
 }
 
-export function AddToCartButton({ product, lowStockThreshold = 5 }: Props) {
-  const { addItem, items } = useCart();
+export function AddToCartButton({
+  product,
+  lowStockThreshold = 5,
+  selectedVariant,
+  variantStock,
+  variantTrackInventory,
+}: Props) {
+  const { addItem, getItemQuantity } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  // Calculate available stock
-  const stock = product.inventory_count;
-  const inCartQty = items.find((i) => i.product.id === product.id)?.quantity || 0;
-  const availableToAdd = stock !== null && stock !== undefined ? stock - inCartQty : Infinity;
-  const isOutOfStock = stock !== null && stock !== undefined && stock === 0;
-  const isLowStock = stock !== null && stock !== undefined && stock > 0 && stock <= lowStockThreshold;
+  // Use variant stock if variant is selected, otherwise use product stock
+  const hasVariants = selectedVariant !== undefined;
+  const trackInventory = hasVariants
+    ? (variantTrackInventory ?? false)
+    : (product.track_inventory ?? false);
+  const stock = hasVariants ? variantStock : product.inventory_count;
+
+  // Get quantity already in cart for this product+variant combination
+  const inCartQty = getItemQuantity(product.id, selectedVariant?.id);
+  const availableToAdd = trackInventory && stock !== null && stock !== undefined
+    ? stock - inCartQty
+    : Infinity;
+  const isOutOfStock = trackInventory && stock !== null && stock !== undefined && stock === 0;
+  const isLowStock = trackInventory && stock !== null && stock !== undefined && stock > 0 && stock <= lowStockThreshold;
+
+  // Check if variant is required but not selected
+  const needsVariantSelection = hasVariants && selectedVariant === null;
 
   const handleAdd = () => {
-    if (quantity > availableToAdd) {
+    if (quantity > availableToAdd || needsVariantSelection) {
       return;
     }
-    addItem(product, quantity);
+    addItem(product, quantity, selectedVariant || undefined);
     setAdded(true);
     setQuantity(1);
     setTimeout(() => setAdded(false), 2000);
@@ -70,10 +90,12 @@ export function AddToCartButton({ product, lowStockThreshold = 5 }: Props) {
 
       <button
         onClick={handleAdd}
-        disabled={isOutOfStock || availableToAdd <= 0}
+        disabled={isOutOfStock || availableToAdd <= 0 || needsVariantSelection}
         className="w-full py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
-        {isOutOfStock
+        {needsVariantSelection
+          ? "Select Options"
+          : isOutOfStock
           ? "Sold Out"
           : availableToAdd <= 0
           ? "Maximum in Cart"

@@ -15,14 +15,26 @@ const stripe = new Stripe(stripeSecretKey || "", {
   apiVersion: "2023-10-16",
 });
 
+interface VariantInfo {
+  id: string;
+  name: string;
+  sku?: string;
+  price_adjustment: number;
+  options: Record<string, string>;
+}
+
 interface CartItem {
   productId: string;
   quantity: number;
+  variantId?: string | null;
+  variantInfo?: VariantInfo | null;
 }
 
 interface StockIssue {
   productId: string;
+  variantId?: string;
   productName: string;
+  variantName?: string;
   requested: number;
   available: number;
 }
@@ -144,9 +156,39 @@ export async function POST(request: NextRequest): Promise<Response> {
         hasPhysicalItems = true;
       }
 
-      // Check stock availability only when inventory tracking is enabled
-      // (Digital products don't track inventory)
-      if (
+      // Calculate price with variant adjustment
+      const variantPriceAdjustment = item.variantInfo?.price_adjustment || 0;
+      const itemPrice = product.price + variantPriceAdjustment;
+
+      // Check stock availability
+      // For variants, check variant stock. For regular products, check product stock.
+      if (item.variantId) {
+        // Fetch variant from database to get current stock
+        const supabase = getSupabaseAdmin();
+        if (supabase) {
+          const { data: variant } = await supabase
+            .from("product_variants")
+            .select("inventory_count, track_inventory, name")
+            .eq("id", item.variantId)
+            .single();
+
+          if (
+            variant &&
+            variant.track_inventory &&
+            variant.inventory_count !== null &&
+            variant.inventory_count < item.quantity
+          ) {
+            stockIssues.push({
+              productId: product.id,
+              variantId: item.variantId,
+              productName: product.name,
+              variantName: variant.name,
+              requested: item.quantity,
+              available: variant.inventory_count,
+            });
+          }
+        }
+      } else if (
         product.track_inventory &&
         product.inventory_count !== null &&
         product.inventory_count < item.quantity
@@ -159,20 +201,27 @@ export async function POST(request: NextRequest): Promise<Response> {
         });
       }
 
+      // Build product name with variant info
+      const productName = item.variantInfo
+        ? `${product.name} - ${item.variantInfo.name}`
+        : product.name;
+
       lineItems.push({
         price_data: {
           currency: "usd",
           product_data: {
-            name: product.name,
+            name: productName,
             description: product.description || undefined,
             images:
               product.images.length > 0 ? [product.images[0]] : undefined,
             metadata: {
-              product_id: product.id, // For webhook to link to inventory
-              is_digital: product.is_digital ? "true" : "false", // Track digital status for webhook
+              product_id: product.id,
+              variant_id: item.variantId || "",
+              variant_name: item.variantInfo?.name || "",
+              is_digital: product.is_digital ? "true" : "false",
             },
           },
-          unit_amount: product.price, // Already in cents
+          unit_amount: itemPrice,
         },
         quantity: item.quantity,
       });
@@ -194,7 +243,8 @@ export async function POST(request: NextRequest): Promise<Response> {
     for (const item of items) {
       const product = await getProductAdmin(item.productId);
       if (product) {
-        cartTotalCents += product.price * item.quantity;
+        const variantPriceAdjustment = item.variantInfo?.price_adjustment || 0;
+        cartTotalCents += (product.price + variantPriceAdjustment) * item.quantity;
       }
     }
 
