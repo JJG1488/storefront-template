@@ -6,6 +6,7 @@ import { formatPrice } from "@/data/products";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { CouponInput } from "@/components/CouponInput";
+import { GiftCardInput, AppliedGiftCard } from "@/components/GiftCardInput";
 import { AddressSelector } from "@/components/AddressSelector";
 
 interface StockIssue {
@@ -31,6 +32,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const [stockErrors, setStockErrors] = useState<StockIssue[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [appliedGiftCard, setAppliedGiftCard] = useState<AppliedGiftCard | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   // Calculate discount amount based on current cart total
@@ -40,7 +42,13 @@ export default function CartPage() {
       : Math.min(appliedCoupon.discountValue, total)
     : 0;
 
-  const finalTotal = total - discountAmount;
+  // Calculate gift card amount (applied after coupon discount)
+  const afterCouponTotal = total - discountAmount;
+  const giftCardAmount = appliedGiftCard
+    ? Math.min(appliedGiftCard.applicableAmount, afterCouponTotal)
+    : 0;
+
+  const finalTotal = afterCouponTotal - giftCardAmount;
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -65,6 +73,7 @@ export default function CartPage() {
             variantInfo: item.variant || null,
           })),
           couponCode: appliedCoupon?.code || null,
+          giftCardCode: appliedGiftCard?.code || null,
           // Include saved address selection
           savedAddressId: selectedAddressId || null,
         }),
@@ -251,6 +260,17 @@ export default function CartPage() {
           />
         </div>
 
+        {/* Gift Card Input */}
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm font-medium text-gray-700 mb-2">Have a gift card?</p>
+          <GiftCardInput
+            cartTotal={afterCouponTotal}
+            appliedGiftCard={appliedGiftCard}
+            onApply={setAppliedGiftCard}
+            onRemove={() => setAppliedGiftCard(null)}
+          />
+        </div>
+
         {/* Order Summary */}
         <div className="p-4 bg-gray-50 rounded-lg space-y-3">
           <div className="flex justify-between text-gray-600">
@@ -261,6 +281,12 @@ export default function CartPage() {
             <div className="flex justify-between text-green-600">
               <span>Discount ({appliedCoupon.code})</span>
               <span>-{formatPrice(discountAmount)}</span>
+            </div>
+          )}
+          {appliedGiftCard && giftCardAmount > 0 && (
+            <div className="flex justify-between text-purple-600">
+              <span>Gift Card ({appliedGiftCard.code})</span>
+              <span>-{formatPrice(giftCardAmount)}</span>
             </div>
           )}
           <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-200">

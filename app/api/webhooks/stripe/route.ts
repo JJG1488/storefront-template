@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabase, getStoreId } from "@/lib/supabase";
-import { sendOrderConfirmation, sendNewOrderAlert, sendLowStockAlert } from "@/lib/email";
+import { sendOrderConfirmation, sendNewOrderAlert, sendLowStockAlert, sendGiftCardPurchaseConfirmation, sendGiftCardDelivery } from "@/lib/email";
+import { createGiftCard, markGiftCardEmailSent, formatGiftCardAmount, redeemGiftCard } from "@/lib/gift-cards";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16",
@@ -43,7 +44,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      await handleSuccessfulCheckout(session);
+      // Check if this is a gift card purchase
+      if (session.metadata?.type === "gift_card") {
+        await handleGiftCardPurchase(session);
+      } else {
+        await handleSuccessfulCheckout(session);
+      }
     }
 
     return NextResponse.json({ received: true });
@@ -280,6 +286,21 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   if (customerId) {
     await markCartAsRecovered(supabase, storeId, customerId, order.id);
   }
+
+  // Redeem gift card if one was used
+  const giftCardId = session.metadata?.gift_card_id;
+  const giftCardAmount = session.metadata?.gift_card_amount;
+  if (giftCardId && giftCardAmount) {
+    const amountToRedeem = parseInt(giftCardAmount, 10);
+    if (amountToRedeem > 0) {
+      const redeemResult = await redeemGiftCard(giftCardId, amountToRedeem, order.id);
+      if (redeemResult.success) {
+        console.log(`Gift card ${giftCardId} redeemed: ${amountToRedeem} cents, new balance: ${redeemResult.newBalance}`);
+      } else {
+        console.error(`Failed to redeem gift card ${giftCardId}:`, redeemResult.error);
+      }
+    }
+  }
 }
 
 async function markCartAsRecovered(
@@ -459,4 +480,77 @@ async function decrementVariantInventory(
       threshold: lowStockThreshold,
     });
   }
+}
+
+async function handleGiftCardPurchase(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata;
+  if (!metadata) {
+    console.error("[Gift Card Webhook] No metadata in session");
+    return;
+  }
+
+  const amount = parseInt(metadata.gift_card_amount || "0", 10);
+  const recipientEmail = metadata.recipient_email;
+  const recipientName = metadata.recipient_name || null;
+  const senderEmail = metadata.sender_email;
+  const senderName = metadata.sender_name || null;
+  const giftMessage = metadata.gift_message || null;
+  const storeName = metadata.store_name || "Store";
+
+  if (!amount || !recipientEmail || !senderEmail) {
+    console.error("[Gift Card Webhook] Missing required metadata", metadata);
+    return;
+  }
+
+  console.log(`[Gift Card Webhook] Creating gift card: ${formatGiftCardAmount(amount)} for ${recipientEmail}`);
+
+  // Create the gift card
+  const result = await createGiftCard({
+    amount,
+    purchasedByEmail: senderEmail,
+    purchasedByName: senderName || undefined,
+    recipientEmail,
+    recipientName: recipientName || undefined,
+    giftMessage: giftMessage || undefined,
+  });
+
+  if (!result.success) {
+    console.error("[Gift Card Webhook] Failed to create gift card:", result.error);
+    return;
+  }
+
+  const { giftCard } = result;
+  console.log(`[Gift Card Webhook] Gift card created: ${giftCard.code}`);
+
+  // Send emails (fire and forget)
+
+  // 1. Send confirmation to purchaser
+  sendGiftCardPurchaseConfirmation({
+    purchaserEmail: senderEmail,
+    purchaserName: senderName || undefined,
+    recipientEmail,
+    recipientName: recipientName || undefined,
+    amount,
+    giftMessage: giftMessage || undefined,
+  }).catch((err) => {
+    console.error("[Gift Card Webhook] Failed to send purchase confirmation:", err);
+  });
+
+  // 2. Send gift card to recipient
+  sendGiftCardDelivery({
+    recipientEmail,
+    recipientName: recipientName || undefined,
+    senderName: senderName || undefined,
+    senderEmail,
+    amount,
+    code: giftCard.code,
+    giftMessage: giftMessage || undefined,
+  }).then(async (success) => {
+    if (success) {
+      await markGiftCardEmailSent(giftCard.id);
+      console.log(`[Gift Card Webhook] Delivery email sent to ${recipientEmail}`);
+    }
+  }).catch((err) => {
+    console.error("[Gift Card Webhook] Failed to send gift card delivery:", err);
+  });
 }

@@ -1018,3 +1018,208 @@ export async function sendCustomerWelcomeEmail(
     return false;
   }
 }
+
+interface GiftCardPurchaseConfirmationDetails {
+  purchaserEmail: string;
+  purchaserName?: string;
+  recipientEmail: string;
+  recipientName?: string;
+  amount: number;
+  giftMessage?: string;
+}
+
+/**
+ * Send gift card purchase confirmation to the purchaser
+ */
+export async function sendGiftCardPurchaseConfirmation(
+  details: GiftCardPurchaseConfirmationDetails
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping gift card purchase confirmation");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+  const purchaserName = details.purchaserName || "there";
+  const recipientDisplay = details.recipientName || details.recipientEmail;
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: details.purchaserEmail,
+      subject: `Gift Card Confirmed - $${(details.amount / 100).toFixed(0)} for ${recipientDisplay}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+            <p style="color: #666; font-size: 14px;">Gift Card Confirmation</p>
+          </div>
+
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">&#127873;</div>
+            <h2 style="color: #166534; margin: 0 0 10px 0;">Gift Card Purchased!</h2>
+            <p style="color: #166534; margin: 0; font-size: 24px; font-weight: bold;">$${(details.amount / 100).toFixed(2)}</p>
+          </div>
+
+          <p>Hi ${purchaserName},</p>
+          <p>Thank you for purchasing a ${store.name} gift card!</p>
+
+          <div style="margin: 25px 0; padding: 20px; background: #f9fafb; border-radius: 8px;">
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Gift Card Details</p>
+            <table style="width: 100%;">
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Amount:</td>
+                <td style="padding: 5px 0; text-align: right; font-weight: bold;">$${(details.amount / 100).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Recipient:</td>
+                <td style="padding: 5px 0; text-align: right;">${recipientDisplay}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Recipient Email:</td>
+                <td style="padding: 5px 0; text-align: right;">${details.recipientEmail}</td>
+              </tr>
+            </table>
+            ${details.giftMessage ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Your Message:</p>
+                <p style="margin: 0; font-style: italic;">"${details.giftMessage}"</p>
+              </div>
+            ` : ""}
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            The recipient will receive an email with their gift card code shortly. The gift card never expires and can be used on any order.
+          </p>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>If you have any questions, reply to this email.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Gift card purchase confirmation sent to:", details.purchaserEmail);
+    return true;
+  } catch (error) {
+    console.error("Failed to send gift card purchase confirmation:", error);
+    return false;
+  }
+}
+
+interface GiftCardDeliveryDetails {
+  recipientEmail: string;
+  recipientName?: string;
+  senderName?: string;
+  senderEmail: string;
+  amount: number;
+  code: string;
+  giftMessage?: string;
+}
+
+/**
+ * Send gift card delivery email to the recipient
+ */
+export async function sendGiftCardDelivery(
+  details: GiftCardDeliveryDetails
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping gift card delivery");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+  const storeUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const recipientName = details.recipientName || "there";
+  const senderDisplay = details.senderName || details.senderEmail;
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: details.recipientEmail,
+      subject: `You received a $${(details.amount / 100).toFixed(0)} gift card from ${senderDisplay}!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+          </div>
+
+          <div style="background: linear-gradient(135deg, ${brandColor}15, ${brandColor}05); border: 2px solid ${brandColor}30; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 15px;">&#127873;</div>
+            <h2 style="color: ${brandColor}; margin: 0 0 10px 0;">You've Received a Gift Card!</h2>
+            <p style="color: #666; margin: 0 0 20px 0;">From ${senderDisplay}</p>
+            <div style="font-size: 36px; font-weight: bold; color: ${brandColor};">
+              $${(details.amount / 100).toFixed(2)}
+            </div>
+          </div>
+
+          <p>Hi ${recipientName},</p>
+          <p>${senderDisplay} has sent you a gift card to use at ${store.name}!</p>
+
+          ${details.giftMessage ? `
+            <div style="margin: 25px 0; padding: 20px; background: #f9fafb; border-left: 4px solid ${brandColor}; border-radius: 0 8px 8px 0;">
+              <p style="margin: 0; font-style: italic; color: #555;">"${details.giftMessage}"</p>
+              <p style="margin: 10px 0 0 0; color: #999; font-size: 14px;">- ${senderDisplay}</p>
+            </div>
+          ` : ""}
+
+          <div style="margin: 30px 0; padding: 25px; background: #1f2937; border-radius: 12px; text-align: center;">
+            <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Your Gift Card Code</p>
+            <div style="font-family: monospace; font-size: 28px; font-weight: bold; color: white; letter-spacing: 2px;">
+              ${details.code}
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${storeUrl}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Shop Now
+            </a>
+          </div>
+
+          <div style="margin: 30px 0; padding: 20px; background: #f9fafb; border-radius: 8px;">
+            <h3 style="margin: 0 0 15px 0; color: #374151;">How to Use Your Gift Card</h3>
+            <ol style="margin: 0; padding-left: 20px; color: #6b7280;">
+              <li style="margin-bottom: 8px;">Shop and add items to your cart</li>
+              <li style="margin-bottom: 8px;">On the cart page, enter your gift card code</li>
+              <li style="margin-bottom: 8px;">The balance will be applied to your order</li>
+              <li>Any remaining balance stays on the card for future use</li>
+            </ol>
+          </div>
+
+          <p style="color: #666; font-size: 14px; text-align: center;">
+            This gift card never expires. Save this email - you'll need the code to redeem it!
+          </p>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>Questions? <a href="${storeUrl}/gift-cards/check" style="color: ${brandColor};">Check your balance</a> or reply to this email.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Gift card delivery email sent to:", details.recipientEmail);
+    return true;
+  } catch (error) {
+    console.error("Failed to send gift card delivery email:", error);
+    return false;
+  }
+}

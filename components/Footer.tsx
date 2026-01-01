@@ -171,6 +171,11 @@ export function Footer({ settings }: FooterProps) {
                   New Arrivals
                 </Link>
               </li>
+              <li>
+                <Link href="/gift-cards" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Gift Cards
+                </Link>
+              </li>
             </ul>
           </div>
 

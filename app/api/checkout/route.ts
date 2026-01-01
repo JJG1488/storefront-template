@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { getProductAdmin } from "@/data/products";
 import { getStoreConfig } from "@/lib/store";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
+import { validateGiftCard } from "@/lib/gift-cards";
 
 // Check for required env vars at startup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -201,9 +202,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const body = await request.json();
-    const { items, couponCode, savedAddressId } = body as {
+    const { items, couponCode, giftCardCode, savedAddressId } = body as {
       items: CartItem[];
       couponCode?: string;
+      giftCardCode?: string;
       savedAddressId?: string | null;
     };
     const store = getStoreConfig();
@@ -221,6 +223,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       storeId: store.id,
       hasStripeAccount: !!store.stripeAccountId,
       couponCode: couponCode || null,
+      giftCardCode: giftCardCode || null,
       customerId: customerId || null,
       hasSavedAddress: !!savedAddress,
     });
@@ -343,7 +346,6 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Validate and apply coupon if provided
     let validatedCoupon: Coupon | null = null;
-    let stripeCouponId: string | null = null;
 
     if (couponCode) {
       const couponResult = await validateAndGetCoupon(couponCode, cartTotalCents);
@@ -356,8 +358,49 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
 
       validatedCoupon = couponResult.coupon!;
+    }
 
-      // Create a Stripe coupon on-the-fly
+    // Validate gift card if provided
+    let validatedGiftCard: { id: string; code: string; currentBalance: number } | null = null;
+    let giftCardAppliedAmount = 0;
+
+    if (giftCardCode) {
+      const giftCardResult = await validateGiftCard(giftCardCode);
+
+      if (!giftCardResult.valid) {
+        return NextResponse.json(
+          { error: giftCardResult.error || "Invalid gift card code" },
+          { status: 400 }
+        );
+      }
+
+      validatedGiftCard = {
+        id: giftCardResult.giftCard.id,
+        code: giftCardResult.giftCard.code,
+        currentBalance: giftCardResult.giftCard.currentBalance,
+      };
+
+      // Calculate coupon discount first
+      const couponDiscount = validatedCoupon
+        ? validatedCoupon.discount_type === "percentage"
+          ? Math.round((cartTotalCents * validatedCoupon.discount_value) / 100)
+          : Math.min(validatedCoupon.discount_value, cartTotalCents)
+        : 0;
+
+      // Gift card is applied to remaining amount after coupon
+      const afterCouponTotal = cartTotalCents - couponDiscount;
+      giftCardAppliedAmount = Math.min(validatedGiftCard.currentBalance, afterCouponTotal);
+
+      console.log("[Checkout] Gift card validated:", {
+        code: validatedGiftCard.code,
+        balance: validatedGiftCard.currentBalance,
+        appliedAmount: giftCardAppliedAmount,
+      });
+    }
+
+    // Create a Stripe coupon on-the-fly if coupon is applied
+    let stripeCouponId: string | null = null;
+    if (validatedCoupon) {
       try {
         const stripeCoupon = await stripe.coupons.create({
           ...(validatedCoupon.discount_type === "percentage"
@@ -393,6 +436,11 @@ export async function POST(request: NextRequest): Promise<Response> {
         ...(validatedCoupon && {
           coupon_id: validatedCoupon.id,
           coupon_code: validatedCoupon.code,
+        }),
+        ...(validatedGiftCard && {
+          gift_card_id: validatedGiftCard.id,
+          gift_card_code: validatedGiftCard.code,
+          gift_card_amount: String(giftCardAppliedAmount),
         }),
         // Include customer and address info in metadata for webhook
         ...(customerId && { customer_id: customerId }),
