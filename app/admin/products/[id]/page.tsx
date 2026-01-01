@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FileUpload } from "@/components/FileUpload";
+import { AIDescriptionButton } from "@/components/AIDescriptionButton";
 import { Download } from "lucide-react";
 
 interface ProductImage {
@@ -225,6 +226,13 @@ export default function EditProductPage() {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
               required
             />
+            <div className="flex justify-end mt-2">
+              <AIDescriptionButton
+                productName={name}
+                onGenerated={setDescription}
+                disabled={saving}
+              />
+            </div>
           </div>
 
           <div>
