@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Heart } from "lucide-react";
+import { Search, Heart, User } from "lucide-react";
 import { CartIcon } from "./CartIcon";
 import { getStoreConfig } from "@/lib/store";
 import { MobileMenu, MenuButton } from "./MobileMenu";
@@ -144,6 +144,13 @@ export function Header({ settings }: HeaderProps) {
 
             {/* Right Actions */}
             <div className="flex items-center gap-1">
+              <Link
+                href="/account"
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Account"
+              >
+                <User className="w-5 h-5" />
+              </Link>
               <Link
                 href="/wishlist"
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"

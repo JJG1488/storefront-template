@@ -128,7 +128,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
               <h3 className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Quick Actions
               </h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => {
                     onClose();
@@ -146,6 +146,14 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                 >
                   <Heart className="w-6 h-6 text-gray-600" />
                   <span className="text-sm text-gray-700">Wishlist</span>
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={onClose}
+                  className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <User className="w-6 h-6 text-gray-600" />
+                  <span className="text-sm text-gray-700">Account</span>
                 </Link>
               </div>
             </div>

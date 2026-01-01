@@ -746,3 +746,146 @@ export async function sendLowStockAlert(product: {
     return false;
   }
 }
+
+/**
+ * Send password reset email to customer
+ */
+export async function sendCustomerPasswordResetEmail(
+  email: string,
+  customerName: string,
+  resetUrl: string
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping customer password reset email");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: email,
+      subject: `Reset Your Password - ${store.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+            <p style="color: #666; font-size: 14px;">Password Reset</p>
+          </div>
+
+          <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <h2 style="color: #92400e; margin: 0 0 10px 0;">Password Reset Requested</h2>
+            <p style="color: #92400e; margin: 0;">Someone requested a password reset for your account.</p>
+          </div>
+
+          <p>Hi ${customerName},</p>
+          <p>Click the button below to set a new password. This link will expire in 1 hour.</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Reset Password
+            </a>
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            If you did not request this reset, you can safely ignore this email. Your password will remain unchanged.
+          </p>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>This is an automated message from ${store.name}.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Customer password reset email sent to:", email);
+    return true;
+  } catch (error) {
+    console.error("Failed to send customer password reset email:", error);
+    return false;
+  }
+}
+
+/**
+ * Send welcome email to new customer after registration
+ */
+export async function sendCustomerWelcomeEmail(
+  email: string,
+  customerName: string
+): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping customer welcome email");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+  const storeUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: email,
+      subject: `Welcome to ${store.name}!`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+          </div>
+
+          <div style="background: linear-gradient(135deg, ${brandColor}20, ${brandColor}10); border: 1px solid ${brandColor}30; border-radius: 12px; padding: 30px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 15px;">&#127881;</div>
+            <h2 style="color: ${brandColor}; margin: 0 0 10px 0;">Welcome, ${customerName}!</h2>
+            <p style="color: #666; margin: 0;">Your account has been created successfully.</p>
+          </div>
+
+          <p>Thanks for creating an account with us!</p>
+
+          <p>With your account, you can:</p>
+          <ul style="padding-left: 20px; color: #555;">
+            <li>Track your orders in real-time</li>
+            <li>View your order history</li>
+            <li>Save addresses for faster checkout</li>
+            <li>Get exclusive offers and updates</li>
+          </ul>
+
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${storeUrl}/account"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Visit Your Account
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>If you have any questions, reply to this email.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Customer welcome email sent to:", email);
+    return true;
+  } catch (error) {
+    console.error("Failed to send customer welcome email:", error);
+    return false;
+  }
+}
