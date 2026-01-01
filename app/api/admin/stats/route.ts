@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
-import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
+import { getSupabaseAdmin, getStoreId, createFreshAdminClient } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   if (!(await verifyAuthFromRequest(request))) {
@@ -15,6 +15,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Store not configured" }, { status: 500 });
     }
 
+    // Fetch low stock threshold from settings
+    let lowStockThreshold = 5;
+    const freshClient = createFreshAdminClient();
+    if (freshClient) {
+      const { data: settingsData } = await freshClient
+        .from("store_settings")
+        .select("settings")
+        .eq("store_id", storeId)
+        .limit(1);
+      if (settingsData?.[0]?.settings?.lowStockThreshold !== undefined) {
+        lowStockThreshold = settingsData[0].settings.lowStockThreshold;
+      }
+    }
+
     // Get product stats
     const { data: products } = await supabase
       .from("products")
@@ -23,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     const totalProducts = products?.length || 0;
     const lowStockProducts = products?.filter((p) =>
-      p.inventory_count !== null && p.inventory_count <= 5
+      p.inventory_count !== null && p.inventory_count <= lowStockThreshold
     ).length || 0;
 
     // Get order stats

@@ -29,6 +29,18 @@ export async function getProducts(): Promise<Product[]> {
       return [];
     }
 
+    // Check if we should hide out of stock products
+    let hideOutOfStock = false;
+    const { data: settingsData } = await supabase
+      .from("store_settings")
+      .select("settings")
+      .eq("store_id", storeId)
+      .limit(1);
+
+    if (settingsData?.[0]?.settings?.hideOutOfStock) {
+      hideOutOfStock = true;
+    }
+
     const { data, error } = await supabase
       .from("products")
       .select("*")
@@ -41,7 +53,7 @@ export async function getProducts(): Promise<Product[]> {
     }
 
     // Transform database products to Product interface
-    return (data || []).map((p) => ({
+    let products = (data || []).map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description || "",
@@ -55,6 +67,20 @@ export async function getProducts(): Promise<Product[]> {
       is_digital: p.is_digital ?? false,
       digital_file_url: p.digital_file_url || null,
     }));
+
+    // Filter out out-of-stock products if setting is enabled
+    if (hideOutOfStock) {
+      products = products.filter((p) => {
+        // Digital products are never out of stock
+        if (p.is_digital) return true;
+        // Products not tracking inventory are always shown
+        if (!p.track_inventory) return true;
+        // Show products with stock > 0
+        return (p.inventory_count ?? 0) > 0;
+      });
+    }
+
+    return products;
   } catch (err) {
     console.error("Failed to fetch products:", err);
     return [];

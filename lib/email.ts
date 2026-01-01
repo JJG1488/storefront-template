@@ -653,3 +653,89 @@ export async function sendNewsletterWelcome(email: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Send low stock alert to store owner
+ */
+export async function sendLowStockAlert(product: {
+  id: string;
+  name: string;
+  currentStock: number;
+  threshold: number;
+}): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping low stock alert");
+    return false;
+  }
+
+  const ownerEmail = getOwnerEmail();
+  if (!ownerEmail) {
+    console.log("Store owner email not configured, skipping low stock alert");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+  const adminUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: ownerEmail,
+      subject: `Low Stock Alert: ${product.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+          </div>
+
+          <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">&#9888;&#65039;</div>
+            <h2 style="color: #b45309; margin: 0;">Low Stock Alert</h2>
+          </div>
+
+          <p>Hi,</p>
+          <p>Your product <strong>"${product.name}"</strong> is running low on stock.</p>
+
+          <div style="margin: 30px 0; padding: 20px; background: #f9fafb; border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Current Stock:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #b45309;">${product.currentStock} units</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Alert Threshold:</td>
+                <td style="padding: 8px 0; text-align: right;">${product.threshold} units</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${adminUrl}/admin/products/${product.id}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              View Product in Admin
+            </a>
+          </div>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>This is an automated inventory alert from ${store.name}.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Low stock alert sent for product:", product.name);
+    return true;
+  } catch (error) {
+    console.error("Failed to send low stock alert:", error);
+    return false;
+  }
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthFromRequest } from "@/lib/admin-tokens";
-import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
+import { getSupabaseAdmin, getStoreId, createFreshAdminClient } from "@/lib/supabase";
 import { canAddProduct, getProductLimit } from "@/lib/products";
 import { getFeatureFlags } from "@/hooks/useFeatureFlags";
 
@@ -31,15 +31,29 @@ export async function GET(request: NextRequest) {
 
     const filter = request.nextUrl.searchParams.get("filter");
 
+    // Fetch low stock threshold from settings
+    let lowStockThreshold = 5;
+    const freshClient = createFreshAdminClient();
+    if (freshClient) {
+      const { data: settingsData } = await freshClient
+        .from("store_settings")
+        .select("settings")
+        .eq("store_id", storeId)
+        .limit(1);
+      if (settingsData?.[0]?.settings?.lowStockThreshold !== undefined) {
+        lowStockThreshold = settingsData[0].settings.lowStockThreshold;
+      }
+    }
+
     let query = supabase
       .from("products")
       .select("*")
       .eq("store_id", storeId)
       .order("created_at", { ascending: false });
 
-    // Filter for low stock
+    // Filter for low stock using configurable threshold
     if (filter === "low-stock") {
-      query = query.lte("inventory_count", 5);
+      query = query.lte("inventory_count", lowStockThreshold);
     }
 
     const { data, error } = await query;
@@ -61,7 +75,8 @@ export async function GET(request: NextRequest) {
         isUnlimited: isUnlimitedProducts,
         current: products.length,
         canAdd: canAddProduct(products.length),
-      }
+      },
+      lowStockThreshold,
     });
   } catch (error) {
     console.error("Products error:", error);

@@ -6,9 +6,10 @@ import type { Product } from "@/data/products";
 
 interface Props {
   product: Product;
+  lowStockThreshold?: number;
 }
 
-export function AddToCartButton({ product }: Props) {
+export function AddToCartButton({ product, lowStockThreshold = 5 }: Props) {
   const { addItem, items } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -18,7 +19,7 @@ export function AddToCartButton({ product }: Props) {
   const inCartQty = items.find((i) => i.product.id === product.id)?.quantity || 0;
   const availableToAdd = stock !== null && stock !== undefined ? stock - inCartQty : Infinity;
   const isOutOfStock = stock !== null && stock !== undefined && stock === 0;
-  const isLowStock = stock !== null && stock !== undefined && stock > 0 && stock <= 5;
+  const isLowStock = stock !== null && stock !== undefined && stock > 0 && stock <= lowStockThreshold;
 
   const handleAdd = () => {
     if (quantity > availableToAdd) {

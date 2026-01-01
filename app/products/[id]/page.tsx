@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getProduct, formatPrice } from "@/data/products";
 import { getProductReviews, getProductRating } from "@/lib/reviews";
+import { getStoreSettingsFromDB } from "@/lib/settings";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductTabs } from "@/components/ProductTabs";
 import { Download } from "lucide-react";
@@ -24,11 +25,15 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  // Fetch reviews and rating in parallel
-  const [reviews, rating] = await Promise.all([
+  // Fetch reviews, rating, and settings in parallel
+  const [reviews, rating, settings] = await Promise.all([
     getProductReviews(params.id),
     getProductRating(params.id),
+    getStoreSettingsFromDB(),
   ]);
+
+  // Get low stock threshold from settings
+  const lowStockThreshold = settings?.lowStockThreshold ?? 5;
 
   // Transform reviews to match ProductTabs expected format (snake_case to camelCase)
   const formattedReviews = reviews.map((review) => ({
@@ -97,7 +102,7 @@ export default async function ProductPage({ params }: Props) {
               Out of Stock
             </button>
           ) : (
-            <AddToCartButton product={product} />
+            <AddToCartButton product={product} lowStockThreshold={lowStockThreshold} />
           )}
         </div>
       </div>

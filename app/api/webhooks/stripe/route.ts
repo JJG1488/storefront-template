@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabase, getStoreId } from "@/lib/supabase";
-import { sendOrderConfirmation, sendNewOrderAlert } from "@/lib/email";
+import { sendOrderConfirmation, sendNewOrderAlert, sendLowStockAlert } from "@/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16",
@@ -209,10 +209,10 @@ async function decrementInventory(
 ) {
   if (!supabase) return;
 
-  // Get current inventory
+  // Get current inventory and product name
   const { data: product } = await supabase
     .from("products")
-    .select("inventory_count, track_inventory")
+    .select("name, inventory_count, track_inventory")
     .eq("id", productId)
     .single();
 
@@ -220,8 +220,27 @@ async function decrementInventory(
     return; // No inventory tracking for this product
   }
 
+  // Get low stock threshold from store settings (default to 5)
+  const storeId = getStoreId();
+  let lowStockThreshold = 5;
+  let lowStockEmailsEnabled = true;
+
+  if (storeId) {
+    const { data: store } = await supabase
+      .from("stores")
+      .select("config")
+      .eq("id", storeId)
+      .single();
+
+    if (store?.config) {
+      lowStockThreshold = store.config.lowStockThreshold ?? 5;
+      lowStockEmailsEnabled = store.config.lowStockEmailsEnabled ?? true;
+    }
+  }
+
+  const oldCount = product.inventory_count;
   // Decrement inventory (don't go below 0)
-  const newCount = Math.max(0, product.inventory_count - quantity);
+  const newCount = Math.max(0, oldCount - quantity);
 
   await supabase
     .from("products")
@@ -229,6 +248,25 @@ async function decrementInventory(
     .eq("id", productId);
 
   console.log(
-    `Inventory updated for product ${productId}: ${product.inventory_count} -> ${newCount}`
+    `Inventory updated for product ${productId}: ${oldCount} -> ${newCount}`
   );
+
+  // Check if inventory just crossed the low stock threshold
+  // Only send alert if:
+  // 1. Low stock emails are enabled
+  // 2. Old count was above threshold
+  // 3. New count is at or below threshold
+  if (
+    lowStockEmailsEnabled &&
+    oldCount > lowStockThreshold &&
+    newCount <= lowStockThreshold
+  ) {
+    console.log(`Low stock threshold crossed for ${product.name}: ${newCount} <= ${lowStockThreshold}`);
+    await sendLowStockAlert({
+      id: productId,
+      name: product.name,
+      currentStock: newCount,
+      threshold: lowStockThreshold,
+    });
+  }
 }

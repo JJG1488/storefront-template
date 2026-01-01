@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image, ChevronDown, Package, Bell, EyeOff } from "lucide-react";
 import { VideoUpload } from "@/components/VideoUpload";
 import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
@@ -29,6 +29,10 @@ interface StoreSettings {
   twitterUrl: string;
   tiktokUrl: string;
   themePreset: string;
+  // Inventory settings
+  lowStockThreshold: number;
+  lowStockEmailsEnabled: boolean;
+  hideOutOfStock: boolean;
   // Video banner settings
   videoBanner?: VideoBannerSettings;
   // Content settings
@@ -63,6 +67,10 @@ export default function SettingsPage() {
     twitterUrl: "",
     tiktokUrl: "",
     themePreset: "default",
+    // Inventory defaults
+    lowStockThreshold: 5,
+    lowStockEmailsEnabled: true,
+    hideOutOfStock: false,
     videoBanner: {
       enabled: false,
       type: "youtube",
@@ -205,6 +213,10 @@ export default function SettingsPage() {
             ...prev,
             ...data.settings,
             themePreset: data.settings?.themePreset || "default",
+            // Inventory settings
+            lowStockThreshold: data.settings?.lowStockThreshold ?? 5,
+            lowStockEmailsEnabled: data.settings?.lowStockEmailsEnabled ?? true,
+            hideOutOfStock: data.settings?.hideOutOfStock ?? false,
             videoBanner: {
               enabled: data.settings?.videoBanner?.enabled ?? false,
               type: data.settings?.videoBanner?.type || "youtube",
@@ -627,6 +639,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
 
       {/* General Tab */}
       {activeTab === "general" && (
+        <>
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -692,6 +705,77 @@ Contact info@gosovereign.io for assistance with custom domain setup.
             </p>
           </div>
         </div>
+
+        {/* Inventory Settings Section */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Package className="w-5 h-5 text-brand" />
+            <h3 className="font-semibold text-gray-900">Inventory Settings</h3>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Low Stock Threshold
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={settings.lowStockThreshold}
+                onChange={(e) => setSettings({ ...settings, lowStockThreshold: parseInt(e.target.value) || 5 })}
+                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+              />
+              <span className="text-sm text-gray-500">units</span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              Products at or below this level will show a low stock warning
+            </p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.lowStockEmailsEnabled}
+                onChange={(e) => setSettings({ ...settings, lowStockEmailsEnabled: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+            </label>
+            <div>
+              <div className="flex items-center gap-2 font-medium text-gray-700">
+                <Bell className="w-4 h-4" />
+                Email me when products reach low stock
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Receive an email alert when inventory drops to the threshold level
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.hideOutOfStock}
+                onChange={(e) => setSettings({ ...settings, hideOutOfStock: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+            </label>
+            <div>
+              <div className="flex items-center gap-2 font-medium text-gray-700">
+                <EyeOff className="w-4 h-4" />
+                Hide out of stock products from storefront
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Products with zero inventory will be hidden from customers
+              </p>
+            </div>
+          </div>
+        </div>
+        </>
       )}
 
       {/* Appearance Tab */}

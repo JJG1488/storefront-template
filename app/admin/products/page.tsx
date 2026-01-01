@@ -25,6 +25,7 @@ interface TierInfo {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
+  const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -49,6 +50,9 @@ export default function ProductsPage() {
           } else {
             setProducts(data.products || []);
             setTierInfo(data.tier || null);
+            if (data.lowStockThreshold !== undefined) {
+              setLowStockThreshold(data.lowStockThreshold);
+            }
           }
         }
       } catch (err) {
@@ -172,7 +176,7 @@ export default function ProductsPage() {
                     <span
                       className={
                         product.inventory_count !== null &&
-                        product.inventory_count <= 5
+                        product.inventory_count <= lowStockThreshold
                           ? "text-orange-600 font-medium"
                           : ""
                       }

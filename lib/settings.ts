@@ -24,6 +24,9 @@ export interface RuntimeSettings {
   facebookUrl: string;
   twitterUrl: string;
   tiktokUrl: string;
+
+  // Inventory
+  lowStockThreshold: number;
 }
 
 /**
@@ -44,6 +47,7 @@ function getDefaultSettings(): RuntimeSettings {
     facebookUrl: config.facebookUrl || "",
     twitterUrl: config.twitterUrl || "",
     tiktokUrl: config.tiktokUrl || "",
+    lowStockThreshold: 5,
   };
 }
 
@@ -93,6 +97,7 @@ export async function getStoreSettingsFromDB(): Promise<RuntimeSettings> {
         facebookUrl: data.settings.facebookUrl ?? defaults.facebookUrl,
         twitterUrl: data.settings.twitterUrl ?? defaults.twitterUrl,
         tiktokUrl: data.settings.tiktokUrl ?? defaults.tiktokUrl,
+        lowStockThreshold: data.settings.lowStockThreshold ?? defaults.lowStockThreshold,
       };
     }
   } catch (error) {

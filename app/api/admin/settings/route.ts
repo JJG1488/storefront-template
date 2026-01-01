@@ -43,6 +43,10 @@ export async function GET(request: NextRequest) {
           facebookUrl: config.facebookUrl,
           twitterUrl: config.twitterUrl,
           tiktokUrl: config.tiktokUrl,
+          // Inventory defaults
+          lowStockThreshold: 5,
+          lowStockEmailsEnabled: true,
+          hideOutOfStock: false,
         },
       });
     }
@@ -70,6 +74,10 @@ export async function GET(request: NextRequest) {
           facebookUrl: config.facebookUrl,
           twitterUrl: config.twitterUrl,
           tiktokUrl: config.tiktokUrl,
+          // Inventory defaults
+          lowStockThreshold: 5,
+          lowStockEmailsEnabled: true,
+          hideOutOfStock: false,
         },
       });
     }
@@ -93,6 +101,10 @@ export async function GET(request: NextRequest) {
         themePreset: data.settings?.themePreset || config.themePreset || "default",
         videoBanner: data.settings?.videoBanner || null,
         content: data.settings?.content || null,
+        // Inventory settings
+        lowStockThreshold: data.settings?.lowStockThreshold ?? 5,
+        lowStockEmailsEnabled: data.settings?.lowStockEmailsEnabled ?? true,
+        hideOutOfStock: data.settings?.hideOutOfStock ?? false,
       },
     });
   } catch (error) {
