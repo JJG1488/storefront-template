@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           facebookUrl: config.facebookUrl,
           twitterUrl: config.twitterUrl,
           tiktokUrl: config.tiktokUrl,
+          currency: config.currency || "USD",
           // Inventory defaults
           lowStockThreshold: 5,
           lowStockEmailsEnabled: true,
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
           facebookUrl: config.facebookUrl,
           twitterUrl: config.twitterUrl,
           tiktokUrl: config.tiktokUrl,
+          currency: config.currency || "USD",
           // Inventory defaults
           lowStockThreshold: 5,
           lowStockEmailsEnabled: true,
@@ -99,6 +101,7 @@ export async function GET(request: NextRequest) {
         twitterUrl: data.settings?.twitterUrl ?? config.twitterUrl,
         tiktokUrl: data.settings?.tiktokUrl ?? config.tiktokUrl,
         themePreset: data.settings?.themePreset || config.themePreset || "default",
+        currency: data.settings?.currency || config.currency || "USD",
         videoBanner: data.settings?.videoBanner || null,
         content: data.settings?.content || null,
         // Inventory settings

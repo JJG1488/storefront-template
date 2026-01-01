@@ -191,9 +191,5 @@ export async function getProductAdmin(id: string): Promise<Product | null> {
   }
 }
 
-export function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+// Re-export formatPrice from currencies module for multi-currency support
+export { formatPrice } from "@/lib/currencies";

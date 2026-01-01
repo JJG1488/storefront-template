@@ -13,6 +13,8 @@ export function getStoreConfig() {
     shippingEnabled: process.env.SHIPPING_ENABLED === "true",
     shippingCountries: (process.env.SHIPPING_COUNTRIES || "US").split(",").filter(Boolean),
     taxEnabled: process.env.TAX_ENABLED === "true",
+    // Currency (defaults to USD)
+    currency: process.env.NEXT_PUBLIC_STORE_CURRENCY || "USD",
     // Social links
     instagramUrl: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "",
     facebookUrl: process.env.NEXT_PUBLIC_FACEBOOK_URL || "",

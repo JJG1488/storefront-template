@@ -153,6 +153,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   const shippingCost = (session.total_details?.amount_shipping || 0);
   const discountAmount = (session.total_details?.amount_discount || 0);
   const couponCode = session.metadata?.coupon_code || null;
+  const currency = session.currency?.toUpperCase() || "USD";
 
   // Create order (link to customer account if logged in)
   const { data: order, error: orderError } = await supabase
@@ -172,6 +173,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       shipping_cost: shippingCost,
       discount_amount: discountAmount,
       coupon_code: couponCode,
+      currency,
       status: "pending",
     })
     .select()

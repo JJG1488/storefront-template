@@ -8,6 +8,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
+import { CURRENCY_GROUPS, getStoreCurrency } from "@/lib/currencies";
 
 interface VideoBannerSettings {
   enabled: boolean;
@@ -29,6 +30,7 @@ interface StoreSettings {
   twitterUrl: string;
   tiktokUrl: string;
   themePreset: string;
+  currency: string;
   // Inventory settings
   lowStockThreshold: number;
   lowStockEmailsEnabled: boolean;
@@ -67,6 +69,7 @@ export default function SettingsPage() {
     twitterUrl: "",
     tiktokUrl: "",
     themePreset: "default",
+    currency: getStoreCurrency(),
     // Inventory defaults
     lowStockThreshold: 5,
     lowStockEmailsEnabled: true,
@@ -238,6 +241,7 @@ export default function SettingsPage() {
             ...prev,
             ...data.settings,
             themePreset: data.settings?.themePreset || "default",
+            currency: data.settings?.currency || getStoreCurrency(),
             // Inventory settings
             lowStockThreshold: data.settings?.lowStockThreshold ?? 5,
             lowStockEmailsEnabled: data.settings?.lowStockEmailsEnabled ?? true,
@@ -727,6 +731,30 @@ Contact info@gosovereign.io for assistance with custom domain setup.
             />
             <p className="mt-1 text-sm text-gray-500">
               Displayed at the top of your store. Leave empty to hide.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Store Currency
+            </label>
+            <select
+              value={settings.currency}
+              onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white"
+            >
+              {CURRENCY_GROUPS.map((group) => (
+                <optgroup key={group.name} label={group.name}>
+                  {group.currencies.map((currency) => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.code} - {currency.name} ({currency.symbol})
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <p className="mt-1 text-sm text-gray-500">
+              All prices in your store will be displayed in this currency. Requires redeployment to take effect.
             </p>
           </div>
         </div>

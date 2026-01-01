@@ -4,6 +4,7 @@ import { getProductAdmin } from "@/data/products";
 import { getStoreConfig } from "@/lib/store";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { validateGiftCard } from "@/lib/gift-cards";
+import { getStoreCurrency } from "@/lib/currencies";
 
 // Check for required env vars at startup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -237,6 +238,9 @@ export async function POST(request: NextRequest): Promise<Response> {
     const stockIssues: StockIssue[] = [];
     let hasPhysicalItems = false; // Track if cart has any physical (non-digital) items
 
+    // Get store currency for Stripe (lowercase for API)
+    const currency = getStoreCurrency().toLowerCase();
+
     for (const item of items) {
       const product = await getProductAdmin(item.productId);
       if (!product) {
@@ -304,7 +308,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       lineItems.push({
         price_data: {
-          currency: "usd",
+          currency,
           product_data: {
             name: productName,
             description: product.description || undefined,
@@ -405,7 +409,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         const stripeCoupon = await stripe.coupons.create({
           ...(validatedCoupon.discount_type === "percentage"
             ? { percent_off: validatedCoupon.discount_value }
-            : { amount_off: validatedCoupon.discount_value, currency: "usd" }),
+            : { amount_off: validatedCoupon.discount_value, currency }),
           duration: "once",
           name: validatedCoupon.code,
         });
