@@ -3,6 +3,19 @@ import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { canAddProduct, getProductLimit } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
+
+// Variant input type for Shopify imports
+interface ImportVariant {
+  name: string;
+  sku?: string;
+  price_adjustment: number;
+  inventory_count: number;
+  track_inventory?: boolean;
+  options: Record<string, string>;
+  is_active?: boolean;
+}
+
 // Helper function to generate URL-friendly slug from product name
 function generateSlug(name: string): string {
   return name
@@ -152,22 +165,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check for variant support (Shopify imports)
+    const hasVariants = body.has_variants === true && Array.isArray(body.variants) && body.variants.length > 0;
+    const variantOptions: string[] = Array.isArray(body.variant_options) ? body.variant_options : [];
+
+    // Generate a unique slug
+    let slug = generateSlug(body.name);
+    const { data: existingSlug } = await supabase
+      .from("products")
+      .select("id")
+      .eq("store_id", storeId)
+      .eq("slug", slug)
+      .single();
+
+    if (existingSlug) {
+      // Append random suffix if slug exists
+      slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+
     // Create the product
     const { data, error } = await supabase
       .from("products")
       .insert({
         store_id: storeId,
         name: body.name,
-        slug: generateSlug(body.name),
+        slug,
         description: body.description || "",
         price: body.price || 0, // Already in cents from CSV parser
         images: uploadedImages,
         status: "active",
-        inventory_count: body.inventory_count ?? null,
-        track_inventory: body.track_inventory ?? false,
+        inventory_count: hasVariants ? null : (body.inventory_count ?? null),
+        track_inventory: hasVariants ? false : (body.track_inventory ?? false),
         is_digital: body.is_digital ?? false,
-        has_variants: false,
-        variant_options: [],
+        has_variants: hasVariants,
+        variant_options: variantOptions,
       })
       .select()
       .single();
@@ -187,11 +218,42 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Create variants if present
+    let variantsCreated = 0;
+    if (hasVariants && data?.id) {
+      const variants: ImportVariant[] = body.variants;
+
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        const { error: variantError } = await supabase
+          .from("product_variants")
+          .insert({
+            product_id: data.id,
+            name: variant.name,
+            sku: variant.sku || null,
+            price_adjustment: variant.price_adjustment || 0,
+            inventory_count: variant.inventory_count || 0,
+            track_inventory: variant.track_inventory ?? true,
+            options: variant.options || {},
+            position: i,
+            is_active: variant.is_active ?? true,
+          });
+
+        if (!variantError) {
+          variantsCreated++;
+        } else {
+          console.error("Variant create error:", variantError);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       product: data,
       imagesUploaded: uploadedImages.length,
       imagesRequested: body.images?.length || 0,
+      variantsCreated,
+      variantsRequested: hasVariants ? body.variants.length : 0,
     });
   } catch (error) {
     console.error("Import error:", error);
