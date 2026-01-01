@@ -275,6 +275,48 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   sendNewOrderAlert(orderDetails).catch((err) => {
     console.error("Failed to send new order alert:", err);
   });
+
+  // Mark any abandoned cart as recovered if customer was logged in
+  if (customerId) {
+    await markCartAsRecovered(supabase, storeId, customerId, order.id);
+  }
+}
+
+async function markCartAsRecovered(
+  supabase: ReturnType<typeof getSupabase>,
+  storeId: string,
+  customerId: string,
+  orderId: string
+) {
+  if (!supabase) return;
+
+  try {
+    // Find any active abandoned cart for this customer
+    const { data: cart } = await supabase
+      .from("abandoned_carts")
+      .select("id")
+      .eq("store_id", storeId)
+      .eq("customer_id", customerId)
+      .is("recovered_at", null)
+      .is("order_id", null)
+      .single();
+
+    if (cart) {
+      // Mark the cart as recovered
+      await supabase
+        .from("abandoned_carts")
+        .update({
+          recovered_at: new Date().toISOString(),
+          order_id: orderId,
+        })
+        .eq("id", cart.id);
+
+      console.log(`Abandoned cart ${cart.id} marked as recovered for order ${orderId}`);
+    }
+  } catch (error) {
+    // Silently ignore errors (cart may not exist, which is fine)
+    console.log("No abandoned cart to recover for customer:", customerId);
+  }
 }
 
 async function decrementInventory(

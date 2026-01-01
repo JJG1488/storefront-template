@@ -817,6 +817,135 @@ export async function sendCustomerPasswordResetEmail(
   }
 }
 
+interface CartRecoveryItem {
+  name: string;
+  price: number;
+  quantity: number;
+  image: string | null;
+  variantName?: string;
+}
+
+interface CartRecoveryDetails {
+  customerEmail: string;
+  customerName: string;
+  cartItems: CartRecoveryItem[];
+  cartTotal: number;
+  recoveryUrl: string;
+}
+
+/**
+ * Send cart recovery email to customer who abandoned their cart
+ */
+export async function sendCartRecoveryEmail(details: CartRecoveryDetails): Promise<boolean> {
+  if (!resend) {
+    console.log("Resend not configured, skipping cart recovery email");
+    return false;
+  }
+
+  const store = getStoreConfig();
+  const brandColor = store.primaryColor || "#6366f1";
+
+  const itemsHtml = details.cartItems
+    .map(
+      (item) => `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              ${
+                item.image
+                  ? `<img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />`
+                  : `<div style="width: 50px; height: 50px; background: #f3f4f6; border-radius: 4px;"></div>`
+              }
+              <div>
+                <div style="font-weight: 500;">${item.name}</div>
+                ${item.variantName ? `<div style="font-size: 12px; color: #666;">${item.variantName}</div>` : ""}
+              </div>
+            </div>
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+            ${item.quantity}
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
+            $${(item.price / 100).toFixed(2)}
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+
+  try {
+    await resend.emails.send({
+      from: getFromAddress(),
+      to: details.customerEmail,
+      subject: `You left something behind! - ${store.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: ${brandColor}; margin-bottom: 10px;">${store.name}</h1>
+          </div>
+
+          <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">&#128722;</div>
+            <h2 style="color: #92400e; margin: 0 0 10px 0;">You left something in your cart!</h2>
+            <p style="color: #92400e; margin: 0;">We saved your items for you</p>
+          </div>
+
+          <p>Hi ${details.customerName},</p>
+          <p>We noticed you left some great items in your shopping cart. They are still waiting for you!</p>
+
+          <h3 style="border-bottom: 2px solid ${brandColor}; padding-bottom: 10px; margin-top: 30px;">Your Cart</h3>
+
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f9fafb;">
+                <th style="padding: 12px; text-align: left;">Item</th>
+                <th style="padding: 12px; text-align: center;">Qty</th>
+                <th style="padding: 12px; text-align: right;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div style="margin-top: 20px; text-align: right; padding: 15px; background: #f9fafb; border-radius: 8px;">
+            <p style="margin: 0; font-size: 18px;"><strong>Total:</strong> $${(details.cartTotal / 100).toFixed(2)}</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${details.recoveryUrl}"
+               style="display: inline-block; background: ${brandColor}; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              Complete Your Purchase
+            </a>
+          </div>
+
+          <p style="color: #666; font-size: 14px; text-align: center;">
+            This link will restore your cart so you can pick up right where you left off.
+          </p>
+
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 12px;">
+            <p>If you have any questions, reply to this email.</p>
+            <p>&copy; ${new Date().getFullYear()} ${store.name}. All rights reserved.</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    console.log("Cart recovery email sent to:", details.customerEmail);
+    return true;
+  } catch (error) {
+    console.error("Failed to send cart recovery email:", error);
+    return false;
+  }
+}
+
 /**
  * Send welcome email to new customer after registration
  */

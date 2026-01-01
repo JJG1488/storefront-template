@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import type { Product } from "@/data/products";
 
 export interface VariantInfo {
@@ -22,6 +22,12 @@ function getCartKey(productId: string, variantId?: string): string {
   return variantId ? `${productId}:${variantId}` : productId;
 }
 
+// Token key matches CustomerAuthContext
+const CUSTOMER_TOKEN_KEY = "customer_token";
+
+// Debounce delay for cart sync (2 seconds)
+const SYNC_DEBOUNCE_MS = 2000;
+
 interface CartContextType {
   items: CartItem[];
   addItem: (product: Product, quantity?: number, variant?: VariantInfo) => void;
@@ -37,6 +43,51 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoadRef = useRef(true);
+
+  // Sync cart to server (for logged-in customers only)
+  const syncCartToServer = useCallback(async (cartItems: CartItem[]) => {
+    // Only sync if customer is logged in
+    const token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+    if (!token) return;
+
+    try {
+      await fetch("/api/carts/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ items: cartItems }),
+      });
+    } catch (error) {
+      // Silently fail - cart sync is best-effort
+      console.log("Cart sync failed:", error);
+    }
+  }, []);
+
+  // Debounced sync function
+  const debouncedSync = useCallback((cartItems: CartItem[]) => {
+    // Clear any existing timeout
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    // Set new timeout
+    syncTimeoutRef.current = setTimeout(() => {
+      syncCartToServer(cartItems);
+    }, SYNC_DEBOUNCE_MS);
+  }, [syncCartToServer]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -48,12 +99,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Invalid cart data
       }
     }
+    isInitialLoadRef.current = false;
   }, []);
 
-  // Save cart to localStorage on change
+  // Save cart to localStorage on change and sync to server
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(items));
-  }, [items]);
+
+    // Don't sync on initial load (cart is already synced server-side)
+    if (!isInitialLoadRef.current) {
+      debouncedSync(items);
+    }
+  }, [items, debouncedSync]);
 
   const addItem = (product: Product, quantity = 1, variant?: VariantInfo) => {
     setItems((prev) => {
