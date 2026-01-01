@@ -80,6 +80,7 @@ function AdminNav({ onLogout }: { onLogout: () => void }) {
   const links = [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/products", label: "Products" },
+    { href: "/admin/coupons", label: "Coupons" },
     { href: "/admin/orders", label: "Orders" },
     { href: "/admin/reviews", label: "Reviews" },
     { href: "/admin/analytics", label: "Analytics" },

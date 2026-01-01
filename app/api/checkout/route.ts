@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getProductAdmin } from "@/data/products";
 import { getStoreConfig } from "@/lib/store";
+import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 
 // Check for required env vars at startup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -26,6 +27,77 @@ interface StockIssue {
   available: number;
 }
 
+interface Coupon {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  minimum_order_amount: number;
+  max_uses: number | null;
+  current_uses: number;
+  starts_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+}
+
+async function validateAndGetCoupon(code: string, cartTotalCents: number): Promise<{ valid: boolean; error?: string; coupon?: Coupon }> {
+  const supabase = getSupabaseAdmin();
+  const storeId = getStoreId();
+
+  if (!supabase || !storeId) {
+    return { valid: false, error: "Store not configured" };
+  }
+
+  const { data: coupon, error } = await supabase
+    .from("coupons")
+    .select("*")
+    .eq("store_id", storeId)
+    .ilike("code", code.trim())
+    .eq("is_active", true)
+    .single();
+
+  if (error || !coupon) {
+    return { valid: false, error: "Invalid coupon code" };
+  }
+
+  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+    return { valid: false, error: "This coupon has expired" };
+  }
+
+  if (coupon.starts_at && new Date(coupon.starts_at) > new Date()) {
+    return { valid: false, error: "This coupon is not yet valid" };
+  }
+
+  if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses) {
+    return { valid: false, error: "This coupon has reached its usage limit" };
+  }
+
+  if (cartTotalCents < coupon.minimum_order_amount) {
+    return { valid: false, error: `Minimum order of $${(coupon.minimum_order_amount / 100).toFixed(2)} required` };
+  }
+
+  return { valid: true, coupon: coupon as Coupon };
+}
+
+async function incrementCouponUsage(couponId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  // Fetch current usage and increment
+  const { data: coupon } = await supabase
+    .from("coupons")
+    .select("current_uses")
+    .eq("id", couponId)
+    .single();
+
+  if (coupon) {
+    await supabase
+      .from("coupons")
+      .update({ current_uses: (coupon.current_uses || 0) + 1 })
+      .eq("id", couponId);
+  }
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
   try {
     // Check Stripe is configured
@@ -38,13 +110,14 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const body = await request.json();
-    const { items } = body as { items: CartItem[] };
+    const { items, couponCode } = body as { items: CartItem[]; couponCode?: string };
     const store = getStoreConfig();
 
     console.log("[Checkout] Processing checkout", {
       itemCount: items?.length,
       storeId: store.id,
       hasStripeAccount: !!store.stripeAccountId,
+      couponCode: couponCode || null,
     });
 
     if (!items || items.length === 0) {
@@ -116,6 +189,51 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
+    // Calculate cart total in cents for coupon validation
+    let cartTotalCents = 0;
+    for (const item of items) {
+      const product = await getProductAdmin(item.productId);
+      if (product) {
+        cartTotalCents += product.price * item.quantity;
+      }
+    }
+
+    // Validate and apply coupon if provided
+    let validatedCoupon: Coupon | null = null;
+    let stripeCouponId: string | null = null;
+
+    if (couponCode) {
+      const couponResult = await validateAndGetCoupon(couponCode, cartTotalCents);
+
+      if (!couponResult.valid) {
+        return NextResponse.json(
+          { error: couponResult.error || "Invalid coupon code" },
+          { status: 400 }
+        );
+      }
+
+      validatedCoupon = couponResult.coupon!;
+
+      // Create a Stripe coupon on-the-fly
+      try {
+        const stripeCoupon = await stripe.coupons.create({
+          ...(validatedCoupon.discount_type === "percentage"
+            ? { percent_off: validatedCoupon.discount_value }
+            : { amount_off: validatedCoupon.discount_value, currency: "usd" }),
+          duration: "once",
+          name: validatedCoupon.code,
+        });
+        stripeCouponId = stripeCoupon.id;
+        console.log("[Checkout] Created Stripe coupon:", stripeCouponId);
+      } catch (couponError) {
+        console.error("[Checkout] Failed to create Stripe coupon:", couponError);
+        return NextResponse.json(
+          { error: "Failed to apply coupon" },
+          { status: 500 }
+        );
+      }
+    }
+
     // Get the origin for success/cancel URLs
     const origin = request.headers.get("origin") || "http://localhost:3000";
 
@@ -129,8 +247,18 @@ export async function POST(request: NextRequest): Promise<Response> {
       metadata: {
         store_id: store.id,
         store_name: store.name,
+        ...(validatedCoupon && {
+          coupon_id: validatedCoupon.id,
+          coupon_code: validatedCoupon.code,
+        }),
       },
     };
+
+    // Add discount if coupon is applied
+    if (stripeCouponId) {
+      sessionParams.discounts = [{ coupon: stripeCouponId }];
+      console.log("[Checkout] Applying discount with coupon:", stripeCouponId);
+    }
 
     // Add shipping address collection only if:
     // 1. Shipping is enabled for the store
@@ -156,6 +284,12 @@ export async function POST(request: NextRequest): Promise<Response> {
     console.log("[Checkout] Creating Stripe session with", lineItems.length, "items");
     const session = await stripe.checkout.sessions.create(sessionParams);
     console.log("[Checkout] Session created:", session.id);
+
+    // Increment coupon usage after successful session creation
+    if (validatedCoupon) {
+      await incrementCouponUsage(validatedCoupon.id);
+      console.log("[Checkout] Incremented usage for coupon:", validatedCoupon.code);
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

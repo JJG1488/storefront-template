@@ -92,6 +92,8 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   const total = session.amount_total || 0;
   const tax = (session.total_details?.amount_tax || 0);
   const shippingCost = (session.total_details?.amount_shipping || 0);
+  const discountAmount = (session.total_details?.amount_discount || 0);
+  const couponCode = session.metadata?.coupon_code || null;
 
   // Create order
   const { data: order, error: orderError } = await supabase
@@ -107,6 +109,8 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
       total,
       tax,
       shipping_cost: shippingCost,
+      discount_amount: discountAmount,
+      coupon_code: couponCode,
       status: "pending",
     })
     .select()
@@ -179,6 +183,8 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
     subtotal,
     tax,
     shippingCost,
+    discountAmount,
+    couponCode,
     total,
     shippingAddress: shippingAddress as {
       line1?: string;

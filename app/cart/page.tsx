@@ -4,6 +4,7 @@ import { useCart } from "@/components/CartContext";
 import { formatPrice } from "@/data/products";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { CouponInput } from "@/components/CouponInput";
 
 interface StockIssue {
   productId: string;
@@ -12,10 +13,28 @@ interface StockIssue {
   available: number;
 }
 
+interface AppliedCoupon {
+  code: string;
+  description: string | null;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  discountAmount: number;
+}
+
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total } = useCart();
   const [loading, setLoading] = useState(false);
   const [stockErrors, setStockErrors] = useState<StockIssue[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
+  // Calculate discount amount based on current cart total
+  const discountAmount = appliedCoupon
+    ? appliedCoupon.discountType === "percentage"
+      ? (total * appliedCoupon.discountValue) / 100
+      : Math.min(appliedCoupon.discountValue, total)
+    : 0;
+
+  const finalTotal = total - discountAmount;
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -30,6 +49,7 @@ export default function CartPage() {
             productId: item.product.id,
             quantity: item.quantity,
           })),
+          couponCode: appliedCoupon?.code || null,
         }),
       });
 
@@ -172,18 +192,47 @@ export default function CartPage() {
         })}
       </div>
 
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <div className="flex justify-between text-xl font-bold">
-          <span>Total</span>
-          <span>{formatPrice(total)}</span>
+      <div className="mt-8 space-y-4">
+        {/* Coupon Input */}
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm font-medium text-gray-700 mb-2">Have a coupon?</p>
+          <CouponInput
+            cartTotal={total}
+            appliedCoupon={appliedCoupon}
+            onApply={(coupon) => setAppliedCoupon({
+              ...coupon,
+              discountAmount: coupon.discountType === "percentage"
+                ? (total * coupon.discountValue) / 100
+                : Math.min(coupon.discountValue, total)
+            })}
+            onRemove={() => setAppliedCoupon(null)}
+          />
         </div>
-        <button
-          onClick={handleCheckout}
-          disabled={loading || stockErrors.length > 0}
-          className="w-full mt-4 py-3 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50"
-        >
-          {loading ? "Processing..." : "Proceed to Checkout"}
-        </button>
+
+        {/* Order Summary */}
+        <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatPrice(total)}</span>
+          </div>
+          {appliedCoupon && discountAmount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Discount ({appliedCoupon.code})</span>
+              <span>-{formatPrice(discountAmount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-200">
+            <span>Total</span>
+            <span>{formatPrice(finalTotal)}</span>
+          </div>
+          <button
+            onClick={handleCheckout}
+            disabled={loading || stockErrors.length > 0}
+            className="w-full mt-2 py-3 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? "Processing..." : "Proceed to Checkout"}
+          </button>
+        </div>
       </div>
     </div>
   );

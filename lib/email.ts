@@ -36,6 +36,8 @@ interface OrderDetails {
   subtotal: number;
   tax: number;
   shippingCost: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   total: number;
   shippingAddress?: {
     line1?: string;
@@ -172,6 +174,7 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
             <p style="margin: 5px 0;"><strong>Subtotal:</strong> $${(order.subtotal / 100).toFixed(2)}</p>
             ${order.tax > 0 ? `<p style="margin: 5px 0;"><strong>Tax:</strong> $${(order.tax / 100).toFixed(2)}</p>` : ""}
             ${order.shippingCost > 0 ? `<p style="margin: 5px 0;"><strong>Shipping:</strong> $${(order.shippingCost / 100).toFixed(2)}</p>` : ""}
+            ${order.discountAmount && order.discountAmount > 0 ? `<p style="margin: 5px 0; color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -$${(order.discountAmount / 100).toFixed(2)}</p>` : ""}
             <p style="margin: 10px 0; font-size: 18px;"><strong>Total:</strong> $${(order.total / 100).toFixed(2)}</p>
           </div>
 
@@ -252,6 +255,10 @@ export async function sendNewOrderAlert(order: OrderDetails): Promise<boolean> {
 
           <h3>Items</h3>
           <pre style="background: #f9fafb; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${itemsList}</pre>
+
+          ${order.discountAmount && order.discountAmount > 0 ? `
+            <p style="color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -$${(order.discountAmount / 100).toFixed(2)}</p>
+          ` : ""}
 
           <h3>Total: $${(order.total / 100).toFixed(2)}</h3>
 
