@@ -22,9 +22,13 @@ import {
   isWooCommerceFormat,
   parseWooCommerceCSV,
 } from "@/lib/woocommerce-csv-parser";
+import {
+  isBigCommerceFormat,
+  parseBigCommerceCSV,
+} from "@/lib/bigcommerce-csv-parser";
 
 type ImportStep = "upload" | "mapping" | "preview" | "importing" | "complete";
-type CSVFormat = "auto" | "standard" | "shopify" | "woocommerce";
+type CSVFormat = "auto" | "standard" | "shopify" | "woocommerce" | "bigcommerce";
 
 interface ImportResult {
   success: number;
@@ -52,7 +56,7 @@ export default function ImportProductsPage() {
   const [step, setStep] = useState<ImportStep>("upload");
   const [dragActive, setDragActive] = useState(false);
   const [csvFormat, setCsvFormat] = useState<CSVFormat>("auto");
-  const [detectedFormat, setDetectedFormat] = useState<"standard" | "shopify" | "woocommerce" | null>(null);
+  const [detectedFormat, setDetectedFormat] = useState<"standard" | "shopify" | "woocommerce" | "bigcommerce" | null>(null);
   const [csvData, setCsvData] = useState<CSVParseResult | null>(null);
   const [csvContent, setCsvContent] = useState<string>("");
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
@@ -91,9 +95,12 @@ export default function ImportProductsPage() {
       // Detect format
       const isShopify = isShopifyFormat(parsed.headers);
       const isWooCommerce = isWooCommerceFormat(parsed.headers);
+      const isBigCommerce = isBigCommerceFormat(parsed.headers);
 
       if (isShopify) {
         setDetectedFormat("shopify");
+      } else if (isBigCommerce) {
+        setDetectedFormat("bigcommerce");
       } else if (isWooCommerce) {
         setDetectedFormat("woocommerce");
       } else {
@@ -102,12 +109,21 @@ export default function ImportProductsPage() {
 
       // Handle based on detected or selected format
       const useShopify = csvFormat === "shopify" || (csvFormat === "auto" && isShopify);
-      const useWooCommerce = csvFormat === "woocommerce" || (csvFormat === "auto" && isWooCommerce && !isShopify);
+      const useBigCommerce = csvFormat === "bigcommerce" || (csvFormat === "auto" && isBigCommerce && !isShopify);
+      const useWooCommerce = csvFormat === "woocommerce" || (csvFormat === "auto" && isWooCommerce && !isShopify && !isBigCommerce);
 
       if (useShopify) {
         // Shopify format - skip mapping step, go directly to preview
         const { products: shopifyProds, errors, variantCount } = parseShopifyCSV(content);
         setShopifyProducts(shopifyProds);
+        setValidationErrors(errors);
+        setTotalVariants(variantCount);
+        setError("");
+        setStep("preview");
+      } else if (useBigCommerce) {
+        // BigCommerce format - skip mapping step, go directly to preview
+        const { products: bcProds, errors, variantCount } = parseBigCommerceCSV(content);
+        setShopifyProducts(bcProds); // Reuse shopifyProducts state for BigCommerce products
         setValidationErrors(errors);
         setTotalVariants(variantCount);
         setError("");
@@ -163,8 +179,9 @@ export default function ImportProductsPage() {
 
   // Determine which products to import based on format
   const isShopifyImport = csvFormat === "shopify" || (csvFormat === "auto" && detectedFormat === "shopify");
+  const isBigCommerceImport = csvFormat === "bigcommerce" || (csvFormat === "auto" && detectedFormat === "bigcommerce");
   const isWooCommerceImport = csvFormat === "woocommerce" || (csvFormat === "auto" && detectedFormat === "woocommerce");
-  const isPlatformImport = isShopifyImport || isWooCommerceImport;
+  const isPlatformImport = isShopifyImport || isBigCommerceImport || isWooCommerceImport;
   const productsToImport = isPlatformImport ? shopifyProducts : products;
 
   // Start import
@@ -334,6 +351,7 @@ export default function ImportProductsPage() {
                   <option value="standard">Standard CSV</option>
                   <option value="shopify">Shopify Export</option>
                   <option value="woocommerce">WooCommerce Export</option>
+                  <option value="bigcommerce">BigCommerce Export</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -363,8 +381,20 @@ export default function ImportProductsPage() {
               </div>
             )}
 
+            {csvFormat === "bigcommerce" && (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                <ShoppingBag className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-800">BigCommerce Import Mode</p>
+                  <p className="text-sm text-blue-700">
+                    Upload your BigCommerce product export CSV. Products with SKU variants will be imported automatically.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <h4 className="font-medium mb-2 text-sm">Supported Formats</h4>
-            <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
               <div>
                 <p className="font-medium text-gray-700 mb-1">Standard CSV</p>
                 <ul className="space-y-0.5">
@@ -387,6 +417,14 @@ export default function ImportProductsPage() {
                   <li>Name, Type, SKU</li>
                   <li>Regular price, Sale price</li>
                   <li>Attribute 1-10 Name/Value</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium text-gray-700 mb-1">BigCommerce Export</p>
+                <ul className="space-y-0.5">
+                  <li>Item Type, Product Name</li>
+                  <li>Price, Sale Price, SKU</li>
+                  <li>Product Image File 1-10</li>
                 </ul>
               </div>
             </div>
@@ -495,6 +533,12 @@ export default function ImportProductsPage() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                 <ShoppingBag className="w-4 h-4" />
                 Shopify Format
+              </span>
+            )}
+            {isBigCommerceImport && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                <ShoppingBag className="w-4 h-4" />
+                BigCommerce Format
               </span>
             )}
             {isWooCommerceImport && (
