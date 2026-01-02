@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Package } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 
@@ -28,8 +29,9 @@ interface Product {
   has_variants: boolean;
 }
 
-export default function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+export default function CollectionPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const [collection, setCollection] = useState<Collection | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

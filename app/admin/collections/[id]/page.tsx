@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Upload, X, Plus, Search, Package, Trash2 } from "lucide-react";
 
@@ -23,8 +23,9 @@ interface Product {
   status: string;
 }
 
-export default function EditCollectionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function EditCollectionPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
