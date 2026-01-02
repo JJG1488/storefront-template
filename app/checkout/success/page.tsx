@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, Package, ArrowRight } from "lucide-react";
@@ -11,6 +11,7 @@ function SuccessContent() {
   const sessionId = searchParams.get("session_id");
   const { isAuthenticated, isLoading } = useCustomerAuth();
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const orderCreatedRef = useRef(false);
 
   useEffect(() => {
     // Clear cart on successful checkout
@@ -18,6 +19,35 @@ function SuccessContent() {
       localStorage.removeItem("cart");
       window.dispatchEvent(new Event("storage"));
     }
+  }, [sessionId]);
+
+  // Create order from session (fallback if webhook didn't create it)
+  useEffect(() => {
+    async function createOrderFromSession() {
+      if (!sessionId || orderCreatedRef.current) return;
+      orderCreatedRef.current = true;
+
+      try {
+        const response = await fetch("/api/orders/from-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.alreadyExists) {
+            console.log("Order already exists (created by webhook)");
+          } else if (data.success) {
+            console.log("Order created via fallback:", data.orderId);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to create order from session:", error);
+      }
+    }
+
+    createOrderFromSession();
   }, [sessionId]);
 
   // Show account prompt for guests after a brief delay
