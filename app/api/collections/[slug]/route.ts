@@ -78,7 +78,7 @@ export async function GET(
 
     const products = (productLinks || [])
       .map((link) => link.products as unknown as ProductData | null)
-      .filter((p): p is ProductData => p !== null && p.status === "published");
+      .filter((p): p is ProductData => p !== null && p.status === "active");
 
     return NextResponse.json({ collection, products });
   } catch (error) {
