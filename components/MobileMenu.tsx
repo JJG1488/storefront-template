@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { X, Home, ShoppingBag, Search, Heart, User, ChevronRight, Instagram, Facebook, Twitter } from "lucide-react";
+import { X, Home, ShoppingBag, FolderOpen, Search, Heart, User, ChevronRight, Instagram, Facebook, Twitter } from "lucide-react";
 import { getStoreConfig } from "@/lib/store";
 import type { RuntimeSettings } from "@/lib/settings";
 
@@ -46,6 +46,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
   const mainLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/#products", label: "All Products", icon: ShoppingBag },
+    { href: "/collections", label: "Collections", icon: FolderOpen },
   ];
 
   const secondaryLinks = [

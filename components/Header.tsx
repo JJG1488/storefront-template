@@ -115,6 +115,12 @@ export function Header({ settings }: HeaderProps) {
                 Products
               </Link>
               <Link
+                href="/collections"
+                className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
+              >
+                Collections
+              </Link>
+              <Link
                 href="/contact"
                 className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >
