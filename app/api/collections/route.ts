@@ -5,14 +5,28 @@ export const dynamic = "force-dynamic";
 
 // GET - List all active collections for storefront
 export async function GET(request: NextRequest) {
-  if (isBuildTime()) {
+  // Debug: Check if we're in build time
+  const buildTime = isBuildTime();
+  const storeId = getStoreId();
+  const supabase = getSupabase();
+
+  // Return debug info if ?debug=1 is passed
+  if (request.nextUrl.searchParams.get("debug") === "1") {
+    return NextResponse.json({
+      debug: true,
+      isBuildTime: buildTime,
+      hasStoreId: !!storeId,
+      storeId: storeId || "EMPTY",
+      hasSupabase: !!supabase,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "NOT SET",
+    });
+  }
+
+  if (buildTime) {
     return NextResponse.json({ collections: [] });
   }
 
   try {
-    const supabase = getSupabase();
-    const storeId = getStoreId();
-
     if (!supabase || !storeId) {
       return NextResponse.json({ error: "Store not configured" }, { status: 500 });
     }
