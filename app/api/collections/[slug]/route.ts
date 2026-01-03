@@ -59,15 +59,15 @@ export async function GET(
       .eq("collection_id", collection.id)
       .order("position", { ascending: true });
 
-    // Filter to only published products
-    interface ProductData {
+    // Filter to only active products and transform images
+    interface RawProductData {
       id: string;
       name: string;
       slug: string;
       description: string;
       price: number;
       compare_at_price: number | null;
-      images: string[];
+      images: unknown[];
       status: string;
       track_inventory: boolean;
       inventory_count: number | null;
@@ -77,8 +77,15 @@ export async function GET(
     }
 
     const products = (productLinks || [])
-      .map((link) => link.products as unknown as ProductData | null)
-      .filter((p): p is ProductData => p !== null && p.status === "active");
+      .map((link) => link.products as unknown as RawProductData | null)
+      .filter((p): p is RawProductData => p !== null && p.status === "active")
+      .map((p) => ({
+        ...p,
+        // Transform images: handle both string URLs and {url, alt, position} objects
+        images: (p.images || []).map((img: unknown) =>
+          typeof img === "string" ? img : (img as { url: string }).url
+        ),
+      }));
 
     return NextResponse.json({ collection, products });
   } catch (error) {
