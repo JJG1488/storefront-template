@@ -27,10 +27,10 @@ export function Hero({ settings }: HeroProps) {
           )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="#products"
+              href="/collections"
               className="inline-flex items-center justify-center px-8 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-all hover:shadow-lg font-medium"
             >
-              Shop Now
+              Shop Collections
               <svg
                 className="w-5 h-5 ml-2"
                 fill="none"
@@ -46,7 +46,7 @@ export function Hero({ settings }: HeroProps) {
               </svg>
             </a>
             <a
-              href="#products"
+              href="#featured"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-brand hover:text-brand transition-all font-medium"
             >
               View Featured

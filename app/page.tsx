@@ -24,7 +24,7 @@ export default async function HomePage() {
       <Hero settings={settings} />
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Products</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
           <ProductGrid products={products} />
         </div>
       </section>
