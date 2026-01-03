@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Store not configured" }, { status: 500 });
     }
 
-    // Fetch active collections with product count
+    // Fetch active collections (without JOIN to avoid RLS/PostgREST cache issues)
     const { data: collections, error } = await supabase
       .from("collections")
       .select(`
@@ -39,8 +39,7 @@ export async function GET(request: NextRequest) {
         name,
         slug,
         description,
-        image_url,
-        product_collections (count)
+        image_url
       `)
       .eq("store_id", storeId)
       .eq("is_active", true)
@@ -48,25 +47,12 @@ export async function GET(request: NextRequest) {
 
     // Debug: Return raw query result if ?debug=2
     if (request.nextUrl.searchParams.get("debug") === "2") {
-      // Also try a simple count query without filters
-      const { count: totalCount } = await supabase
-        .from("collections")
-        .select("*", { count: "exact", head: true });
-
-      // Try query without is_active filter
-      const { data: withoutActiveFilter } = await supabase
-        .from("collections")
-        .select("id, name, store_id, is_active")
-        .eq("store_id", storeId);
-
       return NextResponse.json({
         debug: true,
         storeId,
         rawCollections: collections,
         error: error ? { message: error.message, code: error.code, details: error.details } : null,
         count: collections?.length || 0,
-        totalCollectionsInDB: totalCount,
-        withoutActiveFilter: withoutActiveFilter,
         supabaseUrlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + "...",
       });
     }
@@ -76,12 +62,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch collections" }, { status: 500 });
     }
 
-    // Transform to include product_count
-    const collectionsWithCount = (collections || []).map((c) => ({
-      ...c,
-      product_count: c.product_collections?.[0]?.count || 0,
-      product_collections: undefined,
-    }));
+    // Fetch product counts separately to avoid JOIN issues
+    const collectionsWithCount = await Promise.all(
+      (collections || []).map(async (c) => {
+        const { count } = await supabase
+          .from("product_collections")
+          .select("*", { count: "exact", head: true })
+          .eq("collection_id", c.id);
+        return {
+          ...c,
+          product_count: count || 0,
+        };
+      })
+    );
 
     return NextResponse.json({ collections: collectionsWithCount });
   } catch (error) {
