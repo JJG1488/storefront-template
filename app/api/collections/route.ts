@@ -48,12 +48,26 @@ export async function GET(request: NextRequest) {
 
     // Debug: Return raw query result if ?debug=2
     if (request.nextUrl.searchParams.get("debug") === "2") {
+      // Also try a simple count query without filters
+      const { count: totalCount } = await supabase
+        .from("collections")
+        .select("*", { count: "exact", head: true });
+
+      // Try query without is_active filter
+      const { data: withoutActiveFilter } = await supabase
+        .from("collections")
+        .select("id, name, store_id, is_active")
+        .eq("store_id", storeId);
+
       return NextResponse.json({
         debug: true,
         storeId,
         rawCollections: collections,
         error: error ? { message: error.message, code: error.code, details: error.details } : null,
         count: collections?.length || 0,
+        totalCollectionsInDB: totalCount,
+        withoutActiveFilter: withoutActiveFilter,
+        supabaseUrlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + "...",
       });
     }
 
