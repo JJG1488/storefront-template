@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { CartProvider } from "@/components/CartContext";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { CustomerAuthProvider } from "@/components/CustomerAuthContext";
@@ -47,9 +46,9 @@ export default async function RootLayout({
         <CustomerAuthProvider>
           <CartProvider>
             <WishlistProvider>
-              <Header settings={settings} />
-              <main className="min-h-screen">{children}</main>
-              <Footer settings={settings} />
+              <LayoutWrapper settings={settings}>
+                {children}
+              </LayoutWrapper>
             </WishlistProvider>
           </CartProvider>
         </CustomerAuthProvider>
