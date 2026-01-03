@@ -46,6 +46,17 @@ export async function GET(request: NextRequest) {
       .eq("is_active", true)
       .order("position", { ascending: true });
 
+    // Debug: Return raw query result if ?debug=2
+    if (request.nextUrl.searchParams.get("debug") === "2") {
+      return NextResponse.json({
+        debug: true,
+        storeId,
+        rawCollections: collections,
+        error: error ? { message: error.message, code: error.code, details: error.details } : null,
+        count: collections?.length || 0,
+      });
+    }
+
     if (error) {
       console.error("Failed to fetch collections:", error);
       return NextResponse.json({ error: "Failed to fetch collections" }, { status: 500 });
