@@ -16,6 +16,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: [] });
     }
 
+    // Limit query length to prevent abuse
+    if (query.length > 100) {
+      return NextResponse.json({ products: [], error: "Search query too long" });
+    }
+
+    // Require minimum query length for meaningful results
+    if (query.length < 2) {
+      return NextResponse.json({ products: [] });
+    }
+
     const supabase = getSupabase();
     const storeId = getStoreId();
 

@@ -73,7 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error) {
       // Silently fail - cart sync is best-effort
-      console.log("Cart sync failed:", error);
+      console.error("Cart sync failed:", error);
     }
   }, []);
 

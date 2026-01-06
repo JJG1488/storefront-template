@@ -21,6 +21,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -32,14 +33,20 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, []);
 
-  // Focus input when modal opens
+  // Focus management - store trigger element and restore focus on close
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (isOpen) {
+      // Store the currently focused element before opening
+      previousActiveElement.current = document.activeElement as HTMLElement;
       setTimeout(() => inputRef.current?.focus(), 100);
-    }
-    if (!isOpen) {
+    } else {
       setQuery("");
       setResults([]);
+      // Restore focus to the element that opened the modal
+      if (previousActiveElement.current) {
+        previousActiveElement.current.focus();
+        previousActiveElement.current = null;
+      }
     }
   }, [isOpen]);
 
@@ -157,6 +164,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   setResults([]);
                 }}
                 className="p-1 hover:bg-gray-100 rounded-full"
+                aria-label="Clear search"
               >
                 <X className="w-5 h-5 text-gray-400" />
               </button>
@@ -164,6 +172,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             <button
               onClick={onClose}
               className="ml-2 px-3 py-1 text-sm text-gray-500 hover:text-gray-700"
+              aria-label="Close search (Escape)"
             >
               ESC
             </button>

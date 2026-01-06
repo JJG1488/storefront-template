@@ -88,6 +88,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Percentage cannot exceed 100%" }, { status: 400 });
     }
 
+    // Validate fixed amount (max $10,000 to prevent absurd values)
+    if (discountType === "fixed" && discountValue > 10000) {
+      return NextResponse.json({ error: "Fixed discount cannot exceed $10,000" }, { status: 400 });
+    }
+
     // Check for duplicate code
     const { data: existing } = await supabase
       .from("coupons")

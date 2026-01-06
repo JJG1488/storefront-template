@@ -201,10 +201,11 @@ export default function CartPage() {
                       updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)
                     }
                     className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-100"
+                    aria-label={`Decrease quantity of ${item.product.name}`}
                   >
                     -
                   </button>
-                  <span className="w-8 text-center">{item.quantity}</span>
+                  <span className="w-8 text-center" aria-label={`Quantity: ${item.quantity}`}>{item.quantity}</span>
                   <button
                     onClick={() =>
                       updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)
@@ -216,6 +217,7 @@ export default function CartPage() {
                       item.quantity >= item.product.inventory_count
                     }
                     className="w-8 h-8 flex items-center justify-center border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={`Increase quantity of ${item.product.name}`}
                   >
                     +
                   </button>
@@ -223,6 +225,7 @@ export default function CartPage() {
                 <button
                   onClick={() => removeItem(item.product.id, item.variant?.id)}
                   className="flex items-center gap-1 text-red-500 hover:text-red-700 p-2 -mr-2"
+                  aria-label={`Remove ${item.product.name} from cart`}
                 >
                   <Trash2 className="w-5 h-5" />
                   <span className="hidden sm:inline">Remove</span>

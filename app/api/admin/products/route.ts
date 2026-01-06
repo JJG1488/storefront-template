@@ -135,12 +135,31 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Validate product name
+    if (!body.name || typeof body.name !== "string") {
+      return NextResponse.json({ error: "Product name is required" }, { status: 400 });
+    }
+
+    const productName = body.name.trim();
+    if (productName.length < 2) {
+      return NextResponse.json({ error: "Product name must be at least 2 characters" }, { status: 400 });
+    }
+
+    if (productName.length > 200) {
+      return NextResponse.json({ error: "Product name must be less than 200 characters" }, { status: 400 });
+    }
+
+    // Validate price if provided
+    if (body.price !== undefined && (typeof body.price !== "number" || body.price < 0)) {
+      return NextResponse.json({ error: "Price must be a non-negative number" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("products")
       .insert({
         store_id: storeId,
-        name: body.name,
-        slug: generateSlug(body.name),
+        name: productName,
+        slug: generateSlug(productName),
         description: body.description || "",
         price: body.price || 0,
         images: body.images || [],
