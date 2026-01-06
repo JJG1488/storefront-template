@@ -33,13 +33,20 @@ export function getSupabaseAdmin(): SupabaseClient | null {
 
   if (!supabaseAdminInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    // Use service role key for admin operations, fall back to anon key
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Require service role key for admin operations - do NOT fall back to anon key
+    // as this causes silent RLS failures that are hard to debug
     if (!serviceRoleKey) {
-      console.warn("WARNING: SUPABASE_SERVICE_ROLE_KEY not set - admin operations may fail due to RLS policies");
+      console.error(
+        "[Supabase] CRITICAL: SUPABASE_SERVICE_ROLE_KEY not configured. " +
+        "Admin operations (orders, products, settings) will fail. " +
+        "Please set this environment variable in your deployment."
+      );
+      return null;
     }
-    const key = serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    supabaseAdminInstance = createClient(supabaseUrl, key);
+
+    supabaseAdminInstance = createClient(supabaseUrl, serviceRoleKey);
   }
   return supabaseAdminInstance;
 }
@@ -53,12 +60,20 @@ export function createFreshAdminClient(): SupabaseClient | null {
   if (isBuildTime()) {
     return null;
   }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const key = serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  // Require service role key - do NOT fall back to anon key
+  if (!serviceRoleKey) {
+    console.error(
+      "[Supabase] CRITICAL: SUPABASE_SERVICE_ROLE_KEY not configured for fresh admin client."
+    );
+    return null;
+  }
 
   // Force no caching at fetch level to bypass Supabase PostgREST caching
-  return createClient(supabaseUrl, key, {
+  return createClient(supabaseUrl, serviceRoleKey, {
     global: {
       fetch: (url, options = {}) => {
         // Properly merge headers - options.headers can be Headers object or plain object

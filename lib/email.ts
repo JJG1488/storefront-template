@@ -1,10 +1,19 @@
 import { Resend } from "resend";
 import { getStoreConfig } from "./store";
+import { formatPrice } from "./currencies";
 
 // Initialize Resend client
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
+
+// Log warning at startup if email is not configured
+if (!resend) {
+  console.warn(
+    "[Email] RESEND_API_KEY not configured - email notifications will be disabled. " +
+    "Set RESEND_API_KEY environment variable to enable order confirmations, shipping notifications, etc."
+  );
+}
 
 // Email "from" address - uses store name or defaults
 function getFromAddress(): string {
@@ -73,7 +82,7 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
           ${item.quantity}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
-          $${(item.unit_price / 100).toFixed(2)}
+          ${formatPrice(item.unit_price)}
         </td>
       </tr>
     `
@@ -171,11 +180,11 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
           </table>
 
           <div style="margin-top: 20px; text-align: right;">
-            <p style="margin: 5px 0;"><strong>Subtotal:</strong> $${(order.subtotal / 100).toFixed(2)}</p>
-            ${order.tax > 0 ? `<p style="margin: 5px 0;"><strong>Tax:</strong> $${(order.tax / 100).toFixed(2)}</p>` : ""}
-            ${order.shippingCost > 0 ? `<p style="margin: 5px 0;"><strong>Shipping:</strong> $${(order.shippingCost / 100).toFixed(2)}</p>` : ""}
-            ${order.discountAmount && order.discountAmount > 0 ? `<p style="margin: 5px 0; color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -$${(order.discountAmount / 100).toFixed(2)}</p>` : ""}
-            <p style="margin: 10px 0; font-size: 18px;"><strong>Total:</strong> $${(order.total / 100).toFixed(2)}</p>
+            <p style="margin: 5px 0;"><strong>Subtotal:</strong> ${formatPrice(order.subtotal)}</p>
+            ${order.tax > 0 ? `<p style="margin: 5px 0;"><strong>Tax:</strong> ${formatPrice(order.tax)}</p>` : ""}
+            ${order.shippingCost > 0 ? `<p style="margin: 5px 0;"><strong>Shipping:</strong> ${formatPrice(order.shippingCost)}</p>` : ""}
+            ${order.discountAmount && order.discountAmount > 0 ? `<p style="margin: 5px 0; color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -${formatPrice(order.discountAmount)}</p>` : ""}
+            <p style="margin: 10px 0; font-size: 18px;"><strong>Total:</strong> ${formatPrice(order.total)}</p>
           </div>
 
           ${addressHtml}
@@ -217,14 +226,14 @@ export async function sendNewOrderAlert(order: OrderDetails): Promise<boolean> {
   const store = getStoreConfig();
 
   const itemsList = order.items
-    .map((item) => `- ${item.product_name} x${item.quantity} ($${(item.unit_price / 100).toFixed(2)})`)
+    .map((item) => `- ${item.product_name} x${item.quantity} (${formatPrice(item.unit_price)})`)
     .join("\n");
 
   try {
     await resend.emails.send({
       from: getFromAddress(),
       to: ownerEmail,
-      subject: `New Order! #${order.orderId.slice(0, 8)} - $${(order.total / 100).toFixed(2)}`,
+      subject: `New Order! #${order.orderId.slice(0, 8)} - ${formatPrice(order.total)}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -257,10 +266,10 @@ export async function sendNewOrderAlert(order: OrderDetails): Promise<boolean> {
           <pre style="background: #f9fafb; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${itemsList}</pre>
 
           ${order.discountAmount && order.discountAmount > 0 ? `
-            <p style="color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -$${(order.discountAmount / 100).toFixed(2)}</p>
+            <p style="color: #16a34a;"><strong>Discount${order.couponCode ? ` (${order.couponCode})` : ""}:</strong> -${formatPrice(order.discountAmount)}</p>
           ` : ""}
 
-          <h3>Total: $${(order.total / 100).toFixed(2)}</h3>
+          <h3>Total: ${formatPrice(order.total)}</h3>
 
           <p style="margin-top: 30px;">
             <a href="${process.env.NEXT_PUBLIC_APP_URL || ""}/admin/orders/${order.orderId}"
@@ -866,7 +875,7 @@ export async function sendCartRecoveryEmail(details: CartRecoveryDetails): Promi
             ${item.quantity}
           </td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
-            $${(item.price / 100).toFixed(2)}
+            ${formatPrice(item.price)}
           </td>
         </tr>
       `
@@ -915,7 +924,7 @@ export async function sendCartRecoveryEmail(details: CartRecoveryDetails): Promi
           </table>
 
           <div style="margin-top: 20px; text-align: right; padding: 15px; background: #f9fafb; border-radius: 8px;">
-            <p style="margin: 0; font-size: 18px;"><strong>Total:</strong> $${(details.cartTotal / 100).toFixed(2)}</p>
+            <p style="margin: 0; font-size: 18px;"><strong>Total:</strong> ${formatPrice(details.cartTotal)}</p>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
@@ -1048,7 +1057,7 @@ export async function sendGiftCardPurchaseConfirmation(
     await resend.emails.send({
       from: getFromAddress(),
       to: details.purchaserEmail,
-      subject: `Gift Card Confirmed - $${(details.amount / 100).toFixed(0)} for ${recipientDisplay}`,
+      subject: `Gift Card Confirmed - ${formatPrice(details.amount)} for ${recipientDisplay}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -1065,7 +1074,7 @@ export async function sendGiftCardPurchaseConfirmation(
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
             <div style="font-size: 40px; margin-bottom: 10px;">&#127873;</div>
             <h2 style="color: #166534; margin: 0 0 10px 0;">Gift Card Purchased!</h2>
-            <p style="color: #166534; margin: 0; font-size: 24px; font-weight: bold;">$${(details.amount / 100).toFixed(2)}</p>
+            <p style="color: #166534; margin: 0; font-size: 24px; font-weight: bold;">${formatPrice(details.amount)}</p>
           </div>
 
           <p>Hi ${purchaserName},</p>
@@ -1076,7 +1085,7 @@ export async function sendGiftCardPurchaseConfirmation(
             <table style="width: 100%;">
               <tr>
                 <td style="padding: 5px 0; color: #666;">Amount:</td>
-                <td style="padding: 5px 0; text-align: right; font-weight: bold;">$${(details.amount / 100).toFixed(2)}</td>
+                <td style="padding: 5px 0; text-align: right; font-weight: bold;">${formatPrice(details.amount)}</td>
               </tr>
               <tr>
                 <td style="padding: 5px 0; color: #666;">Recipient:</td>
@@ -1147,7 +1156,7 @@ export async function sendGiftCardDelivery(
     await resend.emails.send({
       from: getFromAddress(),
       to: details.recipientEmail,
-      subject: `You received a $${(details.amount / 100).toFixed(0)} gift card from ${senderDisplay}!`,
+      subject: `You received a ${formatPrice(details.amount)} gift card from ${senderDisplay}!`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -1165,7 +1174,7 @@ export async function sendGiftCardDelivery(
             <h2 style="color: ${brandColor}; margin: 0 0 10px 0;">You've Received a Gift Card!</h2>
             <p style="color: #666; margin: 0 0 20px 0;">From ${senderDisplay}</p>
             <div style="font-size: 36px; font-weight: bold; color: ${brandColor};">
-              $${(details.amount / 100).toFixed(2)}
+              ${formatPrice(details.amount)}
             </div>
           </div>
 

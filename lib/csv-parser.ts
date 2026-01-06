@@ -3,6 +3,8 @@
  * Handles parsing, column detection, and data transformation
  */
 
+import { toSmallestUnit, getStoreCurrency } from "./currencies";
+
 export interface CSVParseResult {
   headers: string[];
   rows: string[][];
@@ -168,18 +170,18 @@ export function transformRow(
   // Get description
   const description = mapping.description !== null ? row[mapping.description]?.trim() || "" : "";
 
-  // Get price and convert to cents
+  // Get price and convert to smallest unit (cents for USD, whole units for JPY, etc.)
   let price = 0;
   if (mapping.price !== null) {
     const priceStr = row[mapping.price]?.trim() || "0";
     // Remove currency symbols and commas
-    const cleanPrice = priceStr.replace(/[$,]/g, "");
+    const cleanPrice = priceStr.replace(/[$,€£¥₩]/g, "");
     const parsedPrice = parseFloat(cleanPrice);
     if (isNaN(parsedPrice)) {
       errors.push({ row: rowIndex, field: "price", message: `Invalid price: "${priceStr}"` });
     } else {
-      // Convert dollars to cents
-      price = Math.round(parsedPrice * 100);
+      // Convert to smallest currency unit (handles zero-decimal currencies like JPY)
+      price = toSmallestUnit(parsedPrice, getStoreCurrency());
     }
   }
 

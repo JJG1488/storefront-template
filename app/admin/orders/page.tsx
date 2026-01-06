@@ -33,12 +33,14 @@ const STATUS_COLORS: Record<string, string> = {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get("status");
 
   useEffect(() => {
     async function loadOrders() {
+      setError(null);
       try {
         const token = localStorage.getItem("admin_token");
         const url = statusFilter
@@ -50,9 +52,12 @@ export default function OrdersPage() {
         });
         if (res.ok) {
           setOrders(await res.json());
+        } else {
+          setError("Failed to load orders. Please try again.");
         }
       } catch (err) {
         console.error("Failed to load orders:", err);
+        setError("Failed to load orders. Please check your connection.");
       } finally {
         setLoading(false);
       }
@@ -62,6 +67,20 @@ export default function OrdersPage() {
 
   if (loading) {
     return <div className="text-center py-8">Loading orders...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

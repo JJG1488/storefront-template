@@ -16,20 +16,25 @@ interface Collection {
 export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCollections();
   }, []);
 
   const fetchCollections = async () => {
+    setError(null);
     try {
       const res = await fetch("/api/collections");
       if (res.ok) {
         const data = await res.json();
         setCollections(data.collections || []);
+      } else {
+        setError("Failed to load collections. Please try again.");
       }
     } catch (err) {
       console.error("Failed to fetch collections:", err);
+      setError("Failed to load collections. Please check your connection.");
     }
     setLoading(false);
   };
@@ -39,6 +44,25 @@ export default function CollectionsPage() {
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              fetchCollections();
+            }}
+            className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

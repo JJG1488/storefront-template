@@ -67,18 +67,47 @@ export async function GET(
     }
 
     // Check download limit (if set)
-    if (product.download_limit !== null && orderItem.download_count >= product.download_limit) {
+    const currentCount = orderItem.download_count || 0;
+    if (product.download_limit !== null && currentCount >= product.download_limit) {
       return NextResponse.json(
         { error: `Download limit reached (${product.download_limit} downloads)` },
         { status: 403 }
       );
     }
 
-    // Increment download count
-    await supabase
+    // Atomically increment download count with optimistic locking
+    // This prevents race conditions where concurrent requests exceed the limit
+    const { data: updated, error: updateError } = await supabase
       .from("order_items")
-      .update({ download_count: orderItem.download_count + 1 })
-      .eq("id", orderItem.id);
+      .update({ download_count: currentCount + 1 })
+      .eq("id", orderItem.id)
+      .eq("download_count", currentCount) // Optimistic lock
+      .select("id")
+      .single();
+
+    if (updateError || !updated) {
+      // Race condition detected - count was modified by another request
+      // Re-check the limit before returning error
+      const { data: recheckItem } = await supabase
+        .from("order_items")
+        .select("download_count")
+        .eq("id", orderItem.id)
+        .single();
+
+      if (recheckItem && product.download_limit !== null &&
+          recheckItem.download_count >= product.download_limit) {
+        return NextResponse.json(
+          { error: `Download limit reached (${product.download_limit} downloads)` },
+          { status: 403 }
+        );
+      }
+
+      // Limit not reached but race occurred - ask user to retry
+      return NextResponse.json(
+        { error: "Please try again" },
+        { status: 409 }
+      );
+    }
 
     // Generate a signed URL for the file (expires in 1 hour)
     const { data: signedUrl, error: signedError } = await supabase.storage
@@ -93,7 +122,7 @@ export async function GET(
       );
     }
 
-    console.log(`Download initiated for product "${product.name}" (download ${orderItem.download_count + 1})`);
+    console.log(`Download initiated for product "${product.name}" (download ${currentCount + 1})`);
 
     // Redirect to the signed URL
     return NextResponse.redirect(signedUrl.signedUrl);
