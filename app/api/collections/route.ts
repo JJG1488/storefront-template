@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabase, getStoreId, isBuildTime } from "@/lib/supabase";
+import { createFreshAnonClient, getStoreId, isBuildTime } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const buildTime = isBuildTime();
   const storeId = getStoreId();
-  const supabase = getSupabase();
+  // Use fresh client to bypass PostgREST caching and get latest data
+  const supabase = createFreshAnonClient();
 
   if (buildTime) {
     return NextResponse.json({ collections: [] });

@@ -94,3 +94,40 @@ export function createFreshAdminClient(): SupabaseClient | null {
     },
   });
 }
+
+// Create a fresh anon client (no caching) - use for public pages that need fresh data
+// This uses the anon key so it's still subject to RLS policies
+export function createFreshAnonClient(): SupabaseClient | null {
+  if (isBuildTime()) {
+    return null;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  if (!supabaseAnonKey) {
+    console.error("[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY not configured.");
+    return null;
+  }
+
+  // Force no caching at fetch level to bypass Supabase PostgREST caching
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      fetch: (url, options = {}) => {
+        const existingHeaders = options.headers instanceof Headers
+          ? Object.fromEntries(options.headers.entries())
+          : (options.headers || {});
+
+        return fetch(url, {
+          ...options,
+          cache: 'no-store',
+          headers: {
+            ...existingHeaders,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
+      },
+    },
+  });
+}
