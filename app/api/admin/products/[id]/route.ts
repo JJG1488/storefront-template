@@ -31,7 +31,19 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data);
+    // Normalize images: handle both string URLs and {url, alt, position} objects
+    // This ensures consistent format for the admin UI
+    const normalizedImages = (data.images || []).map((img: unknown, index: number) => {
+      if (typeof img === "string") {
+        return { url: img, alt: data.name || "", position: index };
+      }
+      return img;
+    });
+
+    return NextResponse.json({
+      ...data,
+      images: normalizedImages,
+    });
   } catch (error) {
     console.error("Product fetch error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

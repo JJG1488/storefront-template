@@ -65,7 +65,18 @@ export async function GET(request: NextRequest) {
 
     // Include tier info for UI limit display
     const { tier, maxProducts, isUnlimitedProducts } = getFeatureFlags();
-    const products = data || [];
+
+    // Normalize images: handle both string URLs and {url, alt, position} objects
+    // This ensures consistent format for the admin UI
+    const products = (data || []).map((product) => ({
+      ...product,
+      images: (product.images || []).map((img: unknown, index: number) => {
+        if (typeof img === "string") {
+          return { url: img, alt: product.name || "", position: index };
+        }
+        return img;
+      }),
+    }));
 
     return NextResponse.json({
       products,
