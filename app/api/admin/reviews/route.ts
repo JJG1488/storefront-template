@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createReview, updateReview, deleteReview, getReviews } from "@/lib/reviews";
+import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 
 // GET - Fetch all reviews
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const reviews = await getReviews();
     return NextResponse.json({ reviews });
@@ -17,6 +22,10 @@ export async function GET() {
 
 // POST - Create a new review
 export async function POST(request: NextRequest) {
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
 
@@ -65,6 +74,10 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update a review
 export async function PUT(request: NextRequest) {
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -104,6 +117,10 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete a review
 export async function DELETE(request: NextRequest) {
+  if (!(await verifyAuthFromRequest(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

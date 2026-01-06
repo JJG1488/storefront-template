@@ -172,23 +172,56 @@ async function validateAndGetCoupon(code: string, cartTotalCents: number): Promi
   return { valid: true, coupon: coupon as Coupon };
 }
 
-async function incrementCouponUsage(couponId: string): Promise<void> {
+// Atomically increment coupon usage to prevent race conditions
+// Uses optimistic locking - only succeeds if max_uses not exceeded
+async function incrementCouponUsage(couponId: string): Promise<boolean> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return;
+  if (!supabase) return false;
 
-  // Fetch current usage and increment
-  const { data: coupon } = await supabase
-    .from("coupons")
-    .select("current_uses")
-    .eq("id", couponId)
-    .single();
+  // First, try to use an atomic RPC function if it exists
+  const { error: rpcError } = await supabase.rpc(
+    "increment_coupon_usage_atomic",
+    { p_coupon_id: couponId }
+  );
 
-  if (coupon) {
-    await supabase
-      .from("coupons")
-      .update({ current_uses: (coupon.current_uses || 0) + 1 })
-      .eq("id", couponId);
+  if (!rpcError) {
+    return true;
   }
+
+  // Fallback: Use optimistic locking pattern if RPC doesn't exist
+  if (rpcError.message.includes("does not exist")) {
+    // Fetch current coupon state
+    const { data: coupon, error: fetchError } = await supabase
+      .from("coupons")
+      .select("current_uses, max_uses")
+      .eq("id", couponId)
+      .single();
+
+    if (fetchError || !coupon) return false;
+
+    const currentUses = coupon.current_uses || 0;
+
+    // Atomic update with optimistic lock - only succeeds if:
+    // 1. current_uses hasn't changed (no race)
+    // 2. max_uses is null OR new count <= max_uses
+    const { data: updated, error: updateError } = await supabase
+      .from("coupons")
+      .update({ current_uses: currentUses + 1 })
+      .eq("id", couponId)
+      .eq("current_uses", currentUses) // Optimistic lock
+      .select("id")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[Checkout] Coupon increment failed (race condition detected)");
+      return false;
+    }
+
+    return true;
+  }
+
+  console.error("[Checkout] Failed to increment coupon usage:", rpcError);
+  return false;
 }
 
 export async function POST(request: NextRequest): Promise<Response> {

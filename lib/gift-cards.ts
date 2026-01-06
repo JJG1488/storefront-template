@@ -9,14 +9,22 @@ export function formatGiftCardAmount(cents: number): string {
 }
 
 // Generate a unique gift card code (GC-XXXX-XXXX-XXXX)
+// Uses crypto.getRandomValues() for cryptographically secure randomness
 export function generateGiftCardCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No confusing chars (0, O, 1, I)
   const segments = [];
 
+  // Generate 12 random bytes (4 chars × 3 segments)
+  const randomBytes = new Uint8Array(12);
+  crypto.getRandomValues(randomBytes);
+
+  let byteIndex = 0;
   for (let s = 0; s < 3; s++) {
     let segment = "";
     for (let i = 0; i < 4; i++) {
-      const randomIndex = Math.floor(Math.random() * chars.length);
+      // Use modulo to map byte value to character set
+      // This is slightly biased but acceptable for 32-char set
+      const randomIndex = randomBytes[byteIndex++] % chars.length;
       segment += chars[randomIndex];
     }
     segments.push(segment);
@@ -106,6 +114,7 @@ export async function validateGiftCard(
 }
 
 // Redeem gift card (deduct amount and log transaction)
+// Uses atomic update with WHERE clause to prevent race conditions
 export async function redeemGiftCard(
   giftCardId: string,
   amount: number,
@@ -115,6 +124,48 @@ export async function redeemGiftCard(
   const storeId = getStoreId();
 
   if (!supabase || !storeId) {
+    return { success: false, error: "Service unavailable" };
+  }
+
+  // Use RPC function for atomic balance update with row-level locking
+  // This prevents race conditions by checking and updating in a single transaction
+  const { data: result, error: rpcError } = await supabase.rpc(
+    "redeem_gift_card_atomic",
+    {
+      p_gift_card_id: giftCardId,
+      p_store_id: storeId,
+      p_amount: amount,
+      p_order_id: orderId,
+    }
+  );
+
+  if (rpcError) {
+    console.error("Gift card redemption RPC error:", rpcError);
+
+    // Fallback to non-atomic method if RPC doesn't exist
+    if (rpcError.message.includes("does not exist")) {
+      return redeemGiftCardFallback(supabase, storeId, giftCardId, amount, orderId);
+    }
+
+    return { success: false, error: "Failed to redeem gift card" };
+  }
+
+  if (!result || !result.success) {
+    return { success: false, error: result?.error || "Failed to redeem gift card" };
+  }
+
+  return { success: true, newBalance: result.new_balance };
+}
+
+// Fallback for stores without the RPC function (uses optimistic locking)
+async function redeemGiftCardFallback(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  storeId: string,
+  giftCardId: string,
+  amount: number,
+  orderId: string
+): Promise<{ success: true; newBalance: number } | { success: false; error: string }> {
+  if (!supabase) {
     return { success: false, error: "Service unavailable" };
   }
 
@@ -143,19 +194,25 @@ export async function redeemGiftCard(
 
   const newBalance = giftCard.current_balance - amount;
   const newStatus = newBalance === 0 ? "exhausted" : "active";
+  const previousBalance = giftCard.current_balance;
 
-  // Update gift card balance
-  const { error: updateError } = await supabase
+  // Atomic update with optimistic locking - only succeeds if balance hasn't changed
+  const { data: updated, error: updateError } = await supabase
     .from("gift_cards")
     .update({
       current_balance: newBalance,
       status: newStatus,
       last_used_at: new Date().toISOString(),
     })
-    .eq("id", giftCardId);
+    .eq("id", giftCardId)
+    .eq("current_balance", previousBalance) // Optimistic lock
+    .eq("status", "active")
+    .select("id")
+    .single();
 
-  if (updateError) {
-    return { success: false, error: "Failed to update gift card balance" };
+  if (updateError || !updated) {
+    // Balance changed between read and update - race condition detected
+    return { success: false, error: "Gift card balance changed, please try again" };
   }
 
   // Create transaction record
@@ -163,7 +220,7 @@ export async function redeemGiftCard(
     gift_card_id: giftCardId,
     order_id: orderId,
     amount: amount,
-    balance_before: giftCard.current_balance,
+    balance_before: previousBalance,
     balance_after: newBalance,
   });
 

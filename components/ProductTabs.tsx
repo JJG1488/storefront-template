@@ -3,6 +3,23 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 
+// Escape HTML entities to prevent XSS attacks
+function escapeHtml(text: string): string {
+  const htmlEntities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return text.replace(/[&<>"']/g, (char) => htmlEntities[char] || char);
+}
+
+// Convert text with newlines to safe HTML
+function textToSafeHtml(text: string): string {
+  return escapeHtml(text).replace(/\n/g, "<br />");
+}
+
 interface ProductTabsProps {
   description: string;
   specifications?: Record<string, string>;
@@ -86,7 +103,7 @@ export function ProductTabs({
             <div
               className="text-gray-600 leading-relaxed"
               dangerouslySetInnerHTML={{
-                __html: description.replace(/\n/g, "<br />"),
+                __html: textToSafeHtml(description),
               }}
             />
           </div>
@@ -114,7 +131,7 @@ export function ProductTabs({
             <div
               className="text-gray-600 leading-relaxed"
               dangerouslySetInnerHTML={{
-                __html: careInstructions.replace(/\n/g, "<br />"),
+                __html: textToSafeHtml(careInstructions),
               }}
             />
           </div>

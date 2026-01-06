@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { sendGiftCardDelivery } from "@/lib/email";
-import { markGiftCardEmailSent } from "@/lib/gift-cards";
+import { markGiftCardEmailSent, generateGiftCardCode } from "@/lib/gift-cards";
+import { verifyAuthFromRequest } from "@/lib/admin-tokens";
 
 export const dynamic = "force-dynamic";
 
-// Verify admin token
-async function verifyAdmin(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return false;
-
-  const token = authHeader.split(" ")[1];
-  const verifyRes = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/admin/verify`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  return verifyRes.ok;
-}
-
 // GET - List all gift cards
 export async function GET(request: NextRequest) {
-  if (!(await verifyAdmin(request))) {
+  if (!(await verifyAuthFromRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,7 +35,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create a new gift card (manual issuance)
 export async function POST(request: NextRequest) {
-  if (!(await verifyAdmin(request))) {
+  if (!(await verifyAuthFromRequest(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -70,17 +58,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Recipient email is required" }, { status: 400 });
     }
 
-    // Generate gift card code
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const segments = [];
-    for (let s = 0; s < 3; s++) {
-      let segment = "";
-      for (let i = 0; i < 4; i++) {
-        segment += chars[Math.floor(Math.random() * chars.length)];
-      }
-      segments.push(segment);
-    }
-    const code = `GC-${segments.join("-")}`;
+    // Generate gift card code using cryptographically secure function
+    const code = generateGiftCardCode();
 
     const { data: giftCard, error } = await supabase
       .from("gift_cards")
