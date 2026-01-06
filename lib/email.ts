@@ -23,7 +23,7 @@ function getOwnerEmail(): string | null {
 interface OrderItem {
   product_name: string;
   quantity: number;
-  price_at_time: number;
+  unit_price: number;
   is_digital?: boolean;
   download_url?: string; // Download token for digital products
 }
@@ -73,7 +73,7 @@ export async function sendOrderConfirmation(order: OrderDetails): Promise<boolea
           ${item.quantity}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
-          $${(item.price_at_time / 100).toFixed(2)}
+          $${(item.unit_price / 100).toFixed(2)}
         </td>
       </tr>
     `
@@ -217,7 +217,7 @@ export async function sendNewOrderAlert(order: OrderDetails): Promise<boolean> {
   const store = getStoreConfig();
 
   const itemsList = order.items
-    .map((item) => `- ${item.product_name} x${item.quantity} ($${(item.price_at_time / 100).toFixed(2)})`)
+    .map((item) => `- ${item.product_name} x${item.quantity} ($${(item.unit_price / 100).toFixed(2)})`)
     .join("\n");
 
   try {

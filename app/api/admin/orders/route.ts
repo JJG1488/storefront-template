@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           id,
           product_id,
           quantity,
-          price_at_time,
+          unit_price,
           product_name
         )
       `)

@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     const orderItems: Array<{
       product_name: string;
       quantity: number;
-      price_at_time: number;
+      unit_price: number;
       is_digital?: boolean;
       download_url?: string;
     }> = [];
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
       orderItems.push({
         product_name: productName,
         quantity,
-        price_at_time: priceAtTime,
+        unit_price: priceAtTime,
         is_digital: isDigital,
         download_url: downloadToken || undefined,
       });

@@ -9,7 +9,7 @@ interface OrderItem {
   product_id: string;
   product_name: string;
   quantity: number;
-  price_at_time: number;
+  unit_price: number;
 }
 
 interface Order {

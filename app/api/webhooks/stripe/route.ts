@@ -188,7 +188,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
   const orderItems: Array<{
     product_name: string;
     quantity: number;
-    price_at_time: number;
+    unit_price: number;
     is_digital?: boolean;
     download_url?: string;
   }> = [];
@@ -229,7 +229,7 @@ async function handleSuccessfulCheckout(session: Stripe.Checkout.Session) {
     orderItems.push({
       product_name: productName,
       quantity,
-      price_at_time: priceAtTime,
+      unit_price: priceAtTime,
       is_digital: isDigital,
       download_url: downloadToken || undefined,
     });

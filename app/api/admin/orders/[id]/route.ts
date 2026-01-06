@@ -28,7 +28,7 @@ export async function GET(
           id,
           product_id,
           quantity,
-          price_at_time,
+          unit_price,
           product_name
         )
       `)

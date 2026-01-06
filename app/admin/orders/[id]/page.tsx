@@ -10,7 +10,7 @@ interface OrderItem {
   product_id: string;
   product_name: string;
   quantity: number;
-  price_at_time: number;
+  unit_price: number;
 }
 
 interface Order {
@@ -218,11 +218,11 @@ export default function OrderDetailPage() {
                     <div className="font-medium">{item.product_name}</div>
                     <div className="text-sm text-gray-500">
                       Qty: {item.quantity} @ $
-                      {(item.price_at_time / 100).toFixed(2)}
+                      {(item.unit_price / 100).toFixed(2)}
                     </div>
                   </div>
                   <div className="font-medium">
-                    ${((item.price_at_time * item.quantity) / 100).toFixed(2)}
+                    ${((item.unit_price * item.quantity) / 100).toFixed(2)}
                   </div>
                 </div>
               ))}
