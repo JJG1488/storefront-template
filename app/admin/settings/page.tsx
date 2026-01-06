@@ -9,6 +9,7 @@ import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
 import { CURRENCY_GROUPS, getStoreCurrency } from "@/lib/currencies";
+import { AIEnhanceButton } from "@/components/AIEnhanceButton";
 
 interface VideoBannerSettings {
   enabled: boolean;
@@ -710,9 +711,18 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
               placeholder="Tell customers about your store..."
             />
-            <p className="mt-1 text-sm text-gray-500">
-              Displayed in the footer
-            </p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-sm text-gray-500">
+                Displayed in the footer
+              </p>
+              <AIEnhanceButton
+                contentType="about"
+                contextName={settings.name}
+                currentText={settings.aboutText}
+                onEnhanced={(text) => setSettings({ ...settings, aboutText: text })}
+                disabled={saving}
+              />
+            </div>
           </div>
 
           <div>
@@ -1463,6 +1473,21 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
               placeholder="Contact us for international shipping rates..."
             />
+            <div className="flex justify-end mt-2">
+              <AIEnhanceButton
+                contentType="shipping"
+                contextName={settings.name}
+                currentText={settings.content?.shipping?.internationalNote}
+                onEnhanced={(text) => setSettings({
+                  ...settings,
+                  content: {
+                    ...settings.content,
+                    shipping: { ...settings.content?.shipping!, internationalNote: text },
+                  },
+                })}
+                disabled={saving}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -1577,6 +1602,21 @@ Contact info@gosovereign.io for assistance with custom domain setup.
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
               placeholder="Information about exchanges..."
             />
+            <div className="flex justify-end mt-2">
+              <AIEnhanceButton
+                contentType="returns"
+                contextName={settings.name}
+                currentText={settings.content?.returns?.exchangeNote}
+                onEnhanced={(text) => setSettings({
+                  ...settings,
+                  content: {
+                    ...settings.content,
+                    returns: { ...settings.content?.returns!, exchangeNote: text },
+                  },
+                })}
+                disabled={saving}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -1610,13 +1650,24 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
                       placeholder="Question..."
                     />
-                    <textarea
-                      value={item.answer}
-                      onChange={(e) => updateFAQ(index, "answer", e.target.value)}
-                      rows={2}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
-                      placeholder="Answer..."
-                    />
+                    <div>
+                      <textarea
+                        value={item.answer}
+                        onChange={(e) => updateFAQ(index, "answer", e.target.value)}
+                        rows={2}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                        placeholder="Answer..."
+                      />
+                      <div className="flex justify-end mt-1">
+                        <AIEnhanceButton
+                          contentType="faq"
+                          contextName={item.question}
+                          currentText={item.answer}
+                          onEnhanced={(text) => updateFAQ(index, "answer", text)}
+                          disabled={saving}
+                        />
+                      </div>
+                    </div>
                   </div>
                   <button
                     onClick={() => removeFAQ(index)}

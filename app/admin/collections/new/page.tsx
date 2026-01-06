@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Upload, X } from "lucide-react";
+import { AIEnhanceButton } from "@/components/AIEnhanceButton";
 
 export default function NewCollectionPage() {
   const router = useRouter();
@@ -128,6 +129,15 @@ export default function NewCollectionPage() {
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
             />
+            <div className="flex justify-end mt-2">
+              <AIEnhanceButton
+                contentType="collection"
+                contextName={name}
+                currentText={description}
+                onEnhanced={setDescription}
+                disabled={saving}
+              />
+            </div>
           </div>
 
           {/* Image */}
