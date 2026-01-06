@@ -10,6 +10,7 @@
  */
 
 import { parseCSV, type CSVParseResult, type ImportError } from "./csv-parser";
+import { toSmallestUnit, getStoreCurrency } from "./currencies";
 
 // Shopify column indices
 interface ShopifyColumnMapping {
@@ -160,13 +161,16 @@ function getShopifyColumnMapping(headers: string[]): ShopifyColumnMapping {
 }
 
 /**
- * Parse price string to cents
+ * Parse price string to smallest currency unit (cents for USD, whole units for JPY, etc.)
  */
-function parsePriceToCents(priceStr: string): number {
+function parsePriceToSmallestUnit(priceStr: string): number {
   if (!priceStr) return 0;
-  const cleaned = priceStr.replace(/[$,]/g, "").trim();
+  // Remove currency symbols and thousand separators
+  const cleaned = priceStr.replace(/[$€£¥₩,]/g, "").trim();
   const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : Math.round(parsed * 100);
+  if (isNaN(parsed)) return 0;
+  // Use currency-aware conversion
+  return toSmallestUnit(parsed, getStoreCurrency());
 }
 
 /**
@@ -277,8 +281,8 @@ export function parseShopifyRows(
         option2Value,
         option3Value,
         sku,
-        price: parsePriceToCents(priceStr),
-        compareAtPrice: compareAtPriceStr ? parsePriceToCents(compareAtPriceStr) : null,
+        price: parsePriceToSmallestUnit(priceStr),
+        compareAtPrice: compareAtPriceStr ? parsePriceToSmallestUnit(compareAtPriceStr) : null,
         inventoryQty: parseInt(inventoryQtyStr) || 0,
         requiresShipping: parseBoolean(requiresShippingStr),
       });

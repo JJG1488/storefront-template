@@ -3,12 +3,76 @@ import { randomBytes } from "crypto";
 import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 import { sendPasswordResetEmail } from "@/lib/email";
 
-// Rate limiting: max 3 reset requests per hour
+// Rate limiting: max 3 reset requests per hour per store
 const MAX_RESET_ATTEMPTS = 3;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const SUPPORT_EMAIL = "info@gosovereign.io";
 
+// IP-based rate limiting: max 5 requests per 15 minutes per IP
+const IP_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_IP_ATTEMPTS = 5;
+
+// In-memory IP rate limiting store (resets on server restart)
+const ipAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  return forwarded?.split(",")[0]?.trim() || realIp || "unknown";
+}
+
+function isIpRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = ipAttempts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    return false;
+  }
+
+  return record.count >= MAX_IP_ATTEMPTS;
+}
+
+function recordIpAttempt(ip: string): void {
+  const now = Date.now();
+  const record = ipAttempts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    // Start new window
+    ipAttempts.set(ip, {
+      count: 1,
+      resetAt: now + IP_RATE_LIMIT_WINDOW_MS,
+    });
+  } else {
+    // Increment attempts
+    record.count++;
+  }
+
+  // Cleanup old entries periodically (every 100 requests)
+  if (Math.random() < 0.01) {
+    for (const [key, value] of ipAttempts.entries()) {
+      if (now > value.resetAt) {
+        ipAttempts.delete(key);
+      }
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const clientIp = getClientIp(request);
+
+  // Check IP-based rate limit first (before any database operations)
+  if (isIpRateLimited(clientIp)) {
+    return NextResponse.json(
+      {
+        error: "Too many reset attempts from this IP. Please try again in 15 minutes.",
+        rateLimited: true,
+      },
+      { status: 429 }
+    );
+  }
+
+  // Record this attempt for IP rate limiting
+  recordIpAttempt(clientIp);
   try {
     const storeId = getStoreId();
     const ownerEmail = process.env.STORE_OWNER_EMAIL;

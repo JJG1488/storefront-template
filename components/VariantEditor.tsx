@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, X, Trash2, GripVertical } from "lucide-react";
 
 export interface VariantOption {
@@ -149,7 +149,19 @@ export function VariantEditor({
     generateVariantsFromOptions(filteredOptions);
   }
 
-  function generateVariantsFromOptions(options: VariantOption[]) {
+  // Memoize cartesian product calculation
+  const cartesianProduct = useCallback((arrays: string[][]): string[][] => {
+    if (arrays.length === 0) return [[]];
+    if (arrays.length === 1) return arrays[0].map((v) => [v]);
+
+    return arrays.reduce<string[][]>(
+      (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
+      [[]]
+    );
+  }, []);
+
+  // Memoize variant generation to avoid expensive recalculations
+  const generateVariantsFromOptions = useCallback((options: VariantOption[]) => {
     if (options.length === 0) {
       setVariants([]);
       return;
@@ -159,47 +171,39 @@ export function VariantEditor({
     const combinations = cartesianProduct(options.map((o) => o.values));
 
     // Create variants, preserving existing data where possible
-    const newVariants: Variant[] = combinations.map((combo, index) => {
-      const optionsObj: Record<string, string> = {};
-      options.forEach((opt, i) => {
-        optionsObj[opt.name] = combo[i];
+    setVariants((prevVariants) => {
+      const newVariants: Variant[] = combinations.map((combo, index) => {
+        const optionsObj: Record<string, string> = {};
+        options.forEach((opt, i) => {
+          optionsObj[opt.name] = combo[i];
+        });
+
+        const variantName = combo.join(" / ");
+
+        // Try to find existing variant with same options
+        const existing = prevVariants.find(
+          (v) => JSON.stringify(v.options) === JSON.stringify(optionsObj)
+        );
+
+        if (existing) {
+          return { ...existing, position: index };
+        }
+
+        return {
+          name: variantName,
+          sku: "",
+          price_adjustment: 0,
+          inventory_count: 0,
+          track_inventory: true,
+          options: optionsObj,
+          position: index,
+          is_active: true,
+        };
       });
 
-      const variantName = combo.join(" / ");
-
-      // Try to find existing variant with same options
-      const existing = variants.find(
-        (v) => JSON.stringify(v.options) === JSON.stringify(optionsObj)
-      );
-
-      if (existing) {
-        return { ...existing, position: index };
-      }
-
-      return {
-        name: variantName,
-        sku: "",
-        price_adjustment: 0,
-        inventory_count: 0,
-        track_inventory: true,
-        options: optionsObj,
-        position: index,
-        is_active: true,
-      };
+      return newVariants;
     });
-
-    setVariants(newVariants);
-  }
-
-  function cartesianProduct(arrays: string[][]): string[][] {
-    if (arrays.length === 0) return [[]];
-    if (arrays.length === 1) return arrays[0].map((v) => [v]);
-
-    return arrays.reduce<string[][]>(
-      (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
-      [[]]
-    );
-  }
+  }, [cartesianProduct]);
 
   function updateVariant(index: number, field: keyof Variant, value: unknown) {
     setVariants((prev) =>

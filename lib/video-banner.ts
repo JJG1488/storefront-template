@@ -1,4 +1,4 @@
-import { getSupabaseAdmin, getStoreId, isBuildTime } from "@/lib/supabase";
+import { createFreshAdminClient, getStoreId, isBuildTime } from "@/lib/supabase";
 import type { VideoBannerProps } from "@/components/VideoBanner";
 
 interface VideoBannerSettings {
@@ -29,7 +29,8 @@ export async function getVideoBannerSettings(): Promise<VideoBannerProps> {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
+    // Use fresh client to ensure we get latest settings (no caching)
+    const supabase = createFreshAdminClient();
     const storeId = getStoreId();
 
     if (!supabase || !storeId) {

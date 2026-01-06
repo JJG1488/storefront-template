@@ -41,52 +41,89 @@ export interface ImportError {
 
 /**
  * Parse CSV content into headers and rows
+ * Handles newlines within quoted fields correctly
  */
 export function parseCSV(content: string): CSVParseResult {
-  const lines = content.split(/\r?\n/).filter(line => line.trim());
-
-  if (lines.length === 0) {
+  if (!content.trim()) {
     return { headers: [], rows: [], rowCount: 0 };
   }
 
-  const headers = parseCSVLine(lines[0]);
-  const rows = lines.slice(1).map(line => parseCSVLine(line));
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = "";
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < content.length) {
+    const char = content[i];
+    const nextChar = content[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote inside quoted field
+        currentField += '"';
+        i += 2;
+        continue;
+      } else {
+        // Toggle quote mode
+        inQuotes = !inQuotes;
+        i++;
+        continue;
+      }
+    }
+
+    if (char === "," && !inQuotes) {
+      // Field separator
+      currentRow.push(currentField.trim());
+      currentField = "";
+      i++;
+      continue;
+    }
+
+    // Handle newlines (CRLF or LF)
+    if ((char === "\r" && nextChar === "\n") || char === "\n") {
+      if (inQuotes) {
+        // Newline inside quoted field - keep it
+        currentField += "\n";
+        i += char === "\r" ? 2 : 1;
+        continue;
+      } else {
+        // End of row
+        currentRow.push(currentField.trim());
+        // Only add non-empty rows
+        if (currentRow.some(field => field !== "")) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentField = "";
+        i += char === "\r" ? 2 : 1;
+        continue;
+      }
+    }
+
+    // Regular character
+    currentField += char;
+    i++;
+  }
+
+  // Handle last field/row (no trailing newline)
+  currentRow.push(currentField.trim());
+  if (currentRow.some(field => field !== "")) {
+    rows.push(currentRow);
+  }
+
+  if (rows.length === 0) {
+    return { headers: [], rows: [], rowCount: 0 };
+  }
+
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
 
   return {
     headers,
-    rows,
-    rowCount: rows.length,
+    rows: dataRows,
+    rowCount: dataRows.length,
   };
-}
-
-/**
- * Parse a single CSV line, handling quoted values and commas within quotes
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    if (char === '"' && inQuotes && nextChar === '"') {
-      // Escaped quote
-      current += '"';
-      i++;
-    } else if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current.trim());
-  return result;
 }
 
 /**

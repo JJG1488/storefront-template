@@ -45,12 +45,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoadRef = useRef(true);
+  // Use ref to always sync latest items, preventing stale closure issues
+  const latestItemsRef = useRef<CartItem[]>([]);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    latestItemsRef.current = items;
+  }, [items]);
 
   // Sync cart to server (for logged-in customers only)
-  const syncCartToServer = useCallback(async (cartItems: CartItem[]) => {
+  const syncCartToServer = useCallback(async () => {
     // Only sync if customer is logged in
     const token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
     if (!token) return;
+
+    // Use ref to get latest items, avoiding stale closure
+    const cartItems = latestItemsRef.current;
 
     try {
       await fetch("/api/carts/sync", {
@@ -68,15 +78,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Debounced sync function
-  const debouncedSync = useCallback((cartItems: CartItem[]) => {
+  const debouncedSync = useCallback(() => {
     // Clear any existing timeout
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
 
-    // Set new timeout
+    // Set new timeout - syncCartToServer reads from ref for latest items
     syncTimeoutRef.current = setTimeout(() => {
-      syncCartToServer(cartItems);
+      syncCartToServer();
     }, SYNC_DEBOUNCE_MS);
   }, [syncCartToServer]);
 
@@ -108,7 +118,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // Don't sync on initial load (cart is already synced server-side)
     if (!isInitialLoadRef.current) {
-      debouncedSync(items);
+      debouncedSync();
     }
   }, [items, debouncedSync]);
 

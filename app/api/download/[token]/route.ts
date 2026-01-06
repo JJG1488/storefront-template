@@ -43,8 +43,17 @@ export async function GET(
     }
 
     // Verify this is for our store
-    const orderStoreId = (orderItem.orders as unknown as { store_id: string })?.store_id;
-    if (orderStoreId !== storeId) {
+    // Supabase joins can return object or array depending on relation type
+    const ordersData = orderItem.orders;
+    let orderStoreId: string | undefined;
+    if (ordersData && typeof ordersData === "object") {
+      if (Array.isArray(ordersData)) {
+        orderStoreId = (ordersData[0] as { store_id?: string })?.store_id;
+      } else {
+        orderStoreId = (ordersData as { store_id?: string }).store_id;
+      }
+    }
+    if (!orderStoreId || orderStoreId !== storeId) {
       return NextResponse.json(
         { error: "Invalid download link" },
         { status: 404 }

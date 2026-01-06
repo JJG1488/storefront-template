@@ -5,6 +5,59 @@ import { getSupabaseAdmin, getStoreId } from "@/lib/supabase";
 // Token expiration: 24 hours
 const TOKEN_EXPIRY_HOURS = 24;
 
+// Rate limiting: max 5 attempts per IP per 15 minutes
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_LOGIN_ATTEMPTS = 5;
+
+// In-memory rate limiting store (resets on server restart)
+// For production, consider using Redis or database-backed rate limiting
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  return forwarded?.split(",")[0]?.trim() || realIp || "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    return false;
+  }
+
+  return record.count >= MAX_LOGIN_ATTEMPTS;
+}
+
+function recordLoginAttempt(ip: string, success: boolean): void {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    // Start new window
+    loginAttempts.set(ip, {
+      count: success ? 0 : 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    });
+  } else if (!success) {
+    // Increment failed attempts
+    record.count++;
+  } else {
+    // Success - clear attempts
+    loginAttempts.delete(ip);
+  }
+
+  // Cleanup old entries periodically (every 100 requests)
+  if (Math.random() < 0.01) {
+    for (const [key, value] of loginAttempts.entries()) {
+      if (now > value.resetAt) {
+        loginAttempts.delete(key);
+      }
+    }
+  }
+}
+
 // Simple token generation - in production use proper JWT
 function generateToken(): string {
   return randomBytes(32).toString("hex");
@@ -87,6 +140,16 @@ async function createAuthToken(storeId: string, supabase: ReturnType<typeof getS
 }
 
 export async function POST(request: NextRequest) {
+  const clientIp = getClientIp(request);
+
+  // Check rate limit before processing
+  if (isRateLimited(clientIp)) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please try again in 15 minutes." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { password } = await request.json();
     const adminPassword = process.env.ADMIN_PASSWORD;
@@ -107,6 +170,7 @@ export async function POST(request: NextRequest) {
       if (!token) {
         return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
       }
+      recordLoginAttempt(clientIp, true);
       return NextResponse.json({ token, isSuperAdmin: true });
     }
 
@@ -124,10 +188,12 @@ export async function POST(request: NextRequest) {
           if (!token) {
             return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
           }
+          recordLoginAttempt(clientIp, true);
           return NextResponse.json({ token });
         }
         // If DB password exists but doesn't match, don't fall back to env var
         // This ensures reset password overrides the original
+        recordLoginAttempt(clientIp, false);
         return NextResponse.json({ error: "Invalid password" }, { status: 401 });
       }
     }
@@ -141,6 +207,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!secureCompare(password, adminPassword)) {
+      recordLoginAttempt(clientIp, false);
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
@@ -148,6 +215,7 @@ export async function POST(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
     }
+    recordLoginAttempt(clientIp, true);
     return NextResponse.json({ token });
   } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });

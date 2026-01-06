@@ -30,15 +30,18 @@ async function getCustomerFromToken(
   if (!sessions || sessions.length === 0) return null;
 
   const session = sessions[0];
-  // customer is returned as array from join, get first element
-  const customerData = session.customer as unknown as Array<{
-    id: string;
-    email: string;
-    store_id: string;
-  }>;
-  const customer = Array.isArray(customerData) ? customerData[0] : customerData;
+  // Supabase joins can return object or array depending on relation type
+  const customerData = session.customer;
+  if (!customerData) return null;
 
-  if (customer.store_id !== storeId) return null;
+  let customer: { id: string; email: string; store_id: string } | undefined;
+  if (Array.isArray(customerData)) {
+    customer = customerData[0] as { id: string; email: string; store_id: string } | undefined;
+  } else if (typeof customerData === "object") {
+    customer = customerData as { id: string; email: string; store_id: string };
+  }
+
+  if (!customer || customer.store_id !== storeId) return null;
   if (new Date(session.expires_at) < new Date()) return null;
 
   return customer;
