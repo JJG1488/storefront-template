@@ -167,7 +167,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={status === "sending"}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
             >
               {status === "sending" ? (
                 <>

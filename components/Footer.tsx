@@ -232,7 +232,7 @@ export function Footer({ settings }: FooterProps) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
                   >
                     {loading ? "..." : "Join"}
                   </button>

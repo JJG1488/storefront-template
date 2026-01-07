@@ -102,7 +102,7 @@ export default function ProductsPage() {
             </Link>
             <Link
               href="/admin/products/new"
-              className="bg-brand text-white px-4 py-2 rounded-lg hover:opacity-90 text-center"
+              className="bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors text-center"
             >
               Add Product
             </Link>

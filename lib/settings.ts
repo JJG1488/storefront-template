@@ -8,6 +8,8 @@ import { getStoreConfig } from "@/lib/store";
 export interface RuntimeSettings {
   // Branding
   themePreset: string;
+  fontPreset: string;
+  darkModeEnabled: boolean;
   logoUrl: string;
 
   // Content
@@ -37,6 +39,8 @@ function getDefaultSettings(): RuntimeSettings {
   const config = getStoreConfig();
   return {
     themePreset: config.themePreset || "default",
+    fontPreset: "default", // Default to system fonts
+    darkModeEnabled: false, // Default to light mode
     logoUrl: config.logoUrl || "",
     announcementBar: config.announcementBar || "",
     tagline: config.tagline || "",
@@ -87,6 +91,8 @@ export async function getStoreSettingsFromDB(): Promise<RuntimeSettings> {
       // Merge database settings with defaults (DB takes precedence)
       return {
         themePreset: data.settings.themePreset || defaults.themePreset,
+        fontPreset: data.settings.fontPreset || defaults.fontPreset,
+        darkModeEnabled: data.settings.darkModeEnabled ?? defaults.darkModeEnabled,
         logoUrl: data.settings.logoUrl || defaults.logoUrl,
         announcementBar: data.settings.announcementBar ?? defaults.announcementBar,
         tagline: data.settings.tagline ?? defaults.tagline,

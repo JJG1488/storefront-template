@@ -235,7 +235,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full sm:w-auto bg-brand text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto bg-brand text-white px-8 py-3 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="w-5 h-5 animate-spin" />}
             {saving ? "Saving..." : "Save Changes"}

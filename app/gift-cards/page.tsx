@@ -235,7 +235,7 @@ export default function GiftCardsPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 px-6 bg-brand text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 px-6 bg-brand text-white font-semibold rounded-xl hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>

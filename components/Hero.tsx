@@ -28,7 +28,7 @@ export function Hero({ settings }: HeroProps) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/collections"
-              className="inline-flex items-center justify-center px-8 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-all hover:shadow-lg font-medium"
+              className="inline-flex items-center justify-center px-8 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-all hover:shadow-lg font-medium"
             >
               Shop Collections
               <svg

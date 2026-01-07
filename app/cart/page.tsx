@@ -117,7 +117,7 @@ export default function CartPage() {
         <p className="text-gray-600">Your cart is empty</p>
         <a
           href="/"
-          className="inline-block mt-4 px-6 py-3 bg-brand text-white rounded-lg hover:opacity-90"
+          className="inline-block mt-4 px-6 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           Continue Shopping
         </a>
@@ -299,7 +299,7 @@ export default function CartPage() {
           <button
             onClick={handleCheckout}
             disabled={loading || stockErrors.length > 0}
-            className="w-full mt-2 py-3 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+            className="w-full mt-2 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
           >
             {loading ? "Processing..." : "Proceed to Checkout"}
           </button>

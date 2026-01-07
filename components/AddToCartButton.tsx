@@ -91,7 +91,7 @@ export function AddToCartButton({
       <button
         onClick={handleAdd}
         disabled={isOutOfStock || availableToAdd <= 0 || needsVariantSelection}
-        className="w-full py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:bg-gray-300 disabled:cursor-not-allowed"
+        className="w-full py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
         {needsVariantSelection
           ? "Select Options"

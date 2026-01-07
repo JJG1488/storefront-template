@@ -8,6 +8,8 @@
  * `premiumThemesEnabled` feature flag.
  */
 
+import { generateBrandVariants, isValidHex } from "./colors";
+
 export interface ThemeColors {
   // Primary brand color - main accent
   primary: string;
@@ -31,12 +33,30 @@ export interface ThemeColors {
   footerTextMuted: string;
 }
 
+/**
+ * Dark mode color overrides.
+ * Only the colors that change between light and dark mode.
+ */
+export interface DarkModeColors {
+  bgPrimary: string;
+  bgSecondary: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  border: string;
+  borderLight: string;
+  footerBg: string;
+  footerText: string;
+  footerTextMuted: string;
+}
+
 export interface ThemePreset {
   id: string;
   name: string;
   description: string;
   isPremium: boolean;
   colors: ThemeColors;
+  dark: DarkModeColors;
   preview: {
     primary: string;
     accent: string;
@@ -65,6 +85,18 @@ export const defaultTheme: ThemePreset = {
     borderLight: "#f3f4f6",
     footerBg: "#111827",
     footerText: "#ffffff",
+    footerTextMuted: "#9ca3af",
+  },
+  dark: {
+    bgPrimary: "#111827",
+    bgSecondary: "#1f2937",
+    textPrimary: "#f9fafb",
+    textSecondary: "#d1d5db",
+    textMuted: "#9ca3af",
+    border: "#374151",
+    borderLight: "#1f2937",
+    footerBg: "#030712",
+    footerText: "#f9fafb",
     footerTextMuted: "#9ca3af",
   },
   preview: {
@@ -98,6 +130,18 @@ export const premiumThemes: ThemePreset[] = [
       footerText: "#ffffff",
       footerTextMuted: "#7dd3fc",
     },
+    dark: {
+      bgPrimary: "#0c4a6e",
+      bgSecondary: "#164e63",
+      textPrimary: "#f0f9ff",
+      textSecondary: "#bae6fd",
+      textMuted: "#7dd3fc",
+      border: "#155e75",
+      borderLight: "#164e63",
+      footerBg: "#042f2e",
+      footerText: "#f0f9ff",
+      footerTextMuted: "#7dd3fc",
+    },
     preview: {
       primary: "#0ea5e9",
       accent: "#14b8a6",
@@ -122,6 +166,18 @@ export const premiumThemes: ThemePreset[] = [
       borderLight: "#f0fdf4",
       footerBg: "#14532d",
       footerText: "#ffffff",
+      footerTextMuted: "#86efac",
+    },
+    dark: {
+      bgPrimary: "#14532d",
+      bgSecondary: "#166534",
+      textPrimary: "#f0fdf4",
+      textSecondary: "#bbf7d0",
+      textMuted: "#86efac",
+      border: "#15803d",
+      borderLight: "#166534",
+      footerBg: "#052e16",
+      footerText: "#f0fdf4",
       footerTextMuted: "#86efac",
     },
     preview: {
@@ -150,6 +206,18 @@ export const premiumThemes: ThemePreset[] = [
       footerText: "#ffffff",
       footerTextMuted: "#fdba74",
     },
+    dark: {
+      bgPrimary: "#7c2d12",
+      bgSecondary: "#9a3412",
+      textPrimary: "#fff7ed",
+      textSecondary: "#fed7aa",
+      textMuted: "#fdba74",
+      border: "#c2410c",
+      borderLight: "#9a3412",
+      footerBg: "#431407",
+      footerText: "#fff7ed",
+      footerTextMuted: "#fdba74",
+    },
     preview: {
       primary: "#f97316",
       accent: "#ec4899",
@@ -174,6 +242,18 @@ export const premiumThemes: ThemePreset[] = [
       borderLight: "#faf5ff",
       footerBg: "#3b0764",
       footerText: "#ffffff",
+      footerTextMuted: "#c4b5fd",
+    },
+    dark: {
+      bgPrimary: "#3b0764",
+      bgSecondary: "#4c1d95",
+      textPrimary: "#faf5ff",
+      textSecondary: "#e9d5ff",
+      textMuted: "#c4b5fd",
+      border: "#5b21b6",
+      borderLight: "#4c1d95",
+      footerBg: "#1e1b4b",
+      footerText: "#faf5ff",
       footerTextMuted: "#c4b5fd",
     },
     preview: {
@@ -202,6 +282,18 @@ export const premiumThemes: ThemePreset[] = [
       footerText: "#ffffff",
       footerTextMuted: "#94a3b8",
     },
+    dark: {
+      bgPrimary: "#0f172a",
+      bgSecondary: "#1e293b",
+      textPrimary: "#f8fafc",
+      textSecondary: "#cbd5e1",
+      textMuted: "#94a3b8",
+      border: "#334155",
+      borderLight: "#1e293b",
+      footerBg: "#020617",
+      footerText: "#f8fafc",
+      footerTextMuted: "#94a3b8",
+    },
     preview: {
       primary: "#475569",
       accent: "#0ea5e9",
@@ -225,24 +317,48 @@ export function getThemeById(themeId: string): ThemePreset {
 
 /**
  * Generate CSS variables from a theme preset.
+ * Includes auto-generated hover/active variants for buttons.
+ * @param theme - The theme preset to generate CSS for
+ * @param isDarkMode - Whether to use dark mode colors (default: false)
  */
-export function generateThemeCSS(theme: ThemePreset): string {
-  const { colors } = theme;
+export function generateThemeCSS(theme: ThemePreset, isDarkMode = false): string {
+  const { colors, dark } = theme;
+  // Generate brand color variants for hover/active states
+  const brandVariants = generateBrandVariants(colors.primary);
+  const secondaryVariants = generateBrandVariants(colors.secondary);
+
+  // Use dark mode colors for bg, text, border, footer if enabled
+  const bgPrimary = isDarkMode ? dark.bgPrimary : colors.bgPrimary;
+  const bgSecondary = isDarkMode ? dark.bgSecondary : colors.bgSecondary;
+  const textPrimary = isDarkMode ? dark.textPrimary : colors.textPrimary;
+  const textSecondary = isDarkMode ? dark.textSecondary : colors.textSecondary;
+  const textMuted = isDarkMode ? dark.textMuted : colors.textMuted;
+  const border = isDarkMode ? dark.border : colors.border;
+  const borderLight = isDarkMode ? dark.borderLight : colors.borderLight;
+  const footerBg = isDarkMode ? dark.footerBg : colors.footerBg;
+  const footerText = isDarkMode ? dark.footerText : colors.footerText;
+  const footerTextMuted = isDarkMode ? dark.footerTextMuted : colors.footerTextMuted;
+
   return `
     :root {
       --brand-color: ${colors.primary};
       --brand-color-10: ${colors.primary10};
+      --brand-hover: ${brandVariants.hover};
+      --brand-active: ${brandVariants.active};
+      --brand-light: ${brandVariants.light};
       --secondary-color: ${colors.secondary};
-      --bg-primary: ${colors.bgPrimary};
-      --bg-secondary: ${colors.bgSecondary};
-      --text-primary: ${colors.textPrimary};
-      --text-secondary: ${colors.textSecondary};
-      --text-muted: ${colors.textMuted};
-      --border-color: ${colors.border};
-      --border-light: ${colors.borderLight};
-      --footer-bg: ${colors.footerBg};
-      --footer-text: ${colors.footerText};
-      --footer-text-muted: ${colors.footerTextMuted};
+      --secondary-hover: ${secondaryVariants.hover};
+      --secondary-active: ${secondaryVariants.active};
+      --bg-primary: ${bgPrimary};
+      --bg-secondary: ${bgSecondary};
+      --text-primary: ${textPrimary};
+      --text-secondary: ${textSecondary};
+      --text-muted: ${textMuted};
+      --border-color: ${border};
+      --border-light: ${borderLight};
+      --footer-bg: ${footerBg};
+      --footer-text: ${footerText};
+      --footer-text-muted: ${footerTextMuted};
     }
   `;
 }

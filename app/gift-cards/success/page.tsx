@@ -81,7 +81,7 @@ function SuccessContent() {
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Link
           href="/gift-cards"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           <Gift className="w-4 h-4" />
           Buy Another Gift Card

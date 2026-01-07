@@ -152,7 +152,7 @@ export default function ShippingPage() {
             </p>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               Contact Us
             </Link>

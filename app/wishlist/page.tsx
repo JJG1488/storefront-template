@@ -28,7 +28,7 @@ export default function WishlistPage() {
         </p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Start Shopping
@@ -125,7 +125,7 @@ export default function WishlistPage() {
                 disabled={
                   product.track_inventory && product.inventory_count === 0
                 }
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ShoppingCart className="w-4 h-4" />
                 Add to Cart

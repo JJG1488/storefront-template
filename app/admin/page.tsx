@@ -115,7 +115,7 @@ function QuickActions() {
       <div className="space-y-3">
         <Link
           href="/admin/products/new"
-          className="block w-full text-center py-3 bg-brand text-white rounded-lg hover:opacity-90"
+          className="block w-full text-center py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           Add New Product
         </Link>

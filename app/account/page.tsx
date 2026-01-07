@@ -162,7 +162,7 @@ export default function AccountPage() {
             </p>
             <Link
               href="/"
-              className="inline-block bg-brand text-white px-6 py-3 rounded-lg font-medium hover:opacity-90"
+              className="inline-block bg-brand text-white px-6 py-3 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               Start Shopping
             </Link>

@@ -34,7 +34,7 @@ function ResetPasswordForm() {
             </p>
             <Link
               href="/account/forgot-password"
-              className="inline-flex items-center justify-center gap-2 bg-brand text-white py-3 px-6 rounded-lg font-medium hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 bg-brand text-white py-3 px-6 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               Request New Link
             </Link>
@@ -179,7 +179,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand text-white py-3 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-brand text-white py-3 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

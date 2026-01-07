@@ -342,7 +342,7 @@ export default function OrderDetailPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-2 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                className="w-full py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>

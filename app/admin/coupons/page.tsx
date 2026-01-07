@@ -98,7 +98,7 @@ export default function CouponsPage() {
         </div>
         <Link
           href="/admin/coupons/new"
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto justify-center"
+          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4" />
           Create Coupon
@@ -118,7 +118,7 @@ export default function CouponsPage() {
             <p className="text-gray-500 mb-4">Create your first coupon to offer discounts to customers</p>
             <Link
               href="/admin/coupons/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               <Plus className="w-4 h-4" />
               Create Coupon

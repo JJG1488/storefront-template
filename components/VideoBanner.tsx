@@ -9,6 +9,7 @@ export interface VideoBannerProps {
   youtubeUrl?: string;
   uploadedUrl?: string;
   imageUrl?: string;
+  autoplay?: boolean; // Default true for backward compatibility
 }
 
 /**
@@ -41,6 +42,7 @@ export function VideoBanner({
   youtubeUrl,
   uploadedUrl,
   imageUrl,
+  autoplay = true, // Default to true for backward compatibility
 }: VideoBannerProps) {
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -78,15 +80,15 @@ export function VideoBanner({
     const videoId = extractYouTubeId(youtubeUrl);
     if (!videoId) return null;
 
-    // YouTube embed URL with autoplay, loop, no controls
-    // mute parameter changes based on state
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+    // YouTube embed URL with conditional autoplay, loop, no controls
+    // autoplay requires mute=1 due to browser policies (autoplay only works when muted)
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&mute=${isMuted ? 1 : 0}&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
 
     return (
       <div className="w-full aspect-video relative">
         <iframe
           ref={iframeRef}
-          key={isMuted ? "muted" : "unmuted"} // Force re-render when mute changes
+          key={`${isMuted ? "muted" : "unmuted"}-${autoplay ? "auto" : "manual"}`} // Force re-render when mute or autoplay changes
           src={embedUrl}
           className="w-full h-full"
           allow="autoplay; encrypted-media"
@@ -106,7 +108,7 @@ export function VideoBanner({
         <video
           ref={videoRef}
           src={uploadedUrl}
-          autoPlay
+          autoPlay={autoplay}
           muted={isMuted}
           loop
           playsInline

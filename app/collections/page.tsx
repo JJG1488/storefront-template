@@ -59,7 +59,7 @@ export default function CollectionsPage() {
               setLoading(true);
               fetchCollections();
             }}
-            className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+            className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             Retry
           </button>

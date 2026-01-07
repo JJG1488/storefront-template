@@ -8,6 +8,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { allThemes, getAvailableThemes, type ThemePreset } from "@/lib/themes";
+import { allFonts, getAvailableFonts, type FontPreset } from "@/lib/fonts";
 import { CURRENCY_GROUPS, getStoreCurrency } from "@/lib/currencies";
 import { AIEnhanceButton } from "@/components/AIEnhanceButton";
 
@@ -17,6 +18,7 @@ interface VideoBannerSettings {
   youtubeUrl: string;
   uploadedUrl: string;
   imageUrl: string;
+  autoplay: boolean; // Default true for backward compatibility
 }
 
 interface StoreSettings {
@@ -31,6 +33,8 @@ interface StoreSettings {
   twitterUrl: string;
   tiktokUrl: string;
   themePreset: string;
+  fontPreset: string;
+  darkModeEnabled: boolean;
   currency: string;
   // Inventory settings
   lowStockThreshold: number;
@@ -70,6 +74,8 @@ export default function SettingsPage() {
     twitterUrl: "",
     tiktokUrl: "",
     themePreset: "default",
+    fontPreset: "default",
+    darkModeEnabled: false,
     currency: getStoreCurrency(),
     // Inventory defaults
     lowStockThreshold: 5,
@@ -81,6 +87,7 @@ export default function SettingsPage() {
       youtubeUrl: "",
       uploadedUrl: "",
       imageUrl: "",
+      autoplay: true, // Default true for backward compatibility
     },
     content: {
       shipping: defaultContent.shipping,
@@ -242,6 +249,8 @@ export default function SettingsPage() {
             ...prev,
             ...data.settings,
             themePreset: data.settings?.themePreset || "default",
+            fontPreset: data.settings?.fontPreset || "default",
+            darkModeEnabled: data.settings?.darkModeEnabled ?? false,
             currency: data.settings?.currency || getStoreCurrency(),
             // Inventory settings
             lowStockThreshold: data.settings?.lowStockThreshold ?? 5,
@@ -253,6 +262,7 @@ export default function SettingsPage() {
               youtubeUrl: data.settings?.videoBanner?.youtubeUrl || "",
               uploadedUrl: data.settings?.videoBanner?.uploadedUrl || "",
               imageUrl: data.settings?.videoBanner?.imageUrl || "",
+              autoplay: data.settings?.videoBanner?.autoplay ?? true, // Default true for backward compatibility
             },
             content: {
               shipping: data.settings?.content?.shipping || defaultContent.shipping,
@@ -571,7 +581,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
         <button
           onClick={handleSave}
           disabled={saving}
-          className="hidden md:flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="hidden md:flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
         >
           {saved ? (
             <>
@@ -938,6 +948,126 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                 </div>
               </div>
             )}
+
+            {/* Dark Mode Toggle */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">Dark Mode</h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Switch your storefront to a dark color scheme
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.darkModeEnabled || false}
+                    onChange={(e) =>
+                      setSettings({ ...settings, darkModeEnabled: e.target.checked })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Font Presets Section */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-semibold text-gray-900">Store Fonts</h3>
+                <p className="text-sm text-gray-500">Choose a font combination for your storefront</p>
+              </div>
+              {!flags.premiumThemesEnabled && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                  <Lock className="w-3 h-3" />
+                  Pro Feature
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allFonts.map((font) => {
+                const isSelected = settings.fontPreset === font.id;
+                const isLocked = font.isPremium && !flags.premiumThemesEnabled;
+
+                return (
+                  <button
+                    key={font.id}
+                    onClick={() => {
+                      if (!isLocked) {
+                        setSettings({ ...settings, fontPreset: font.id });
+                      }
+                    }}
+                    disabled={isLocked}
+                    className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+                      isSelected
+                        ? "border-brand bg-brand/5"
+                        : isLocked
+                        ? "border-gray-200 opacity-60 cursor-not-allowed"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {/* Font preview */}
+                    <div className="mb-3">
+                      <div
+                        className="text-xl font-semibold text-gray-900"
+                        style={{ fontFamily: font.headingFont }}
+                      >
+                        Heading Text
+                      </div>
+                      <div
+                        className="text-sm text-gray-600 mt-1"
+                        style={{ fontFamily: font.bodyFont }}
+                      >
+                        Body text preview - The quick brown fox jumps over the lazy dog.
+                      </div>
+                    </div>
+
+                    {/* Font info */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900">{font.name}</span>
+                      {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
+                      {isSelected && <Check className="w-4 h-4 text-brand" />}
+                    </div>
+                    <p className="text-xs text-gray-500">{font.description}</p>
+
+                    {/* Premium badge */}
+                    {font.isPremium && !isLocked && (
+                      <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium rounded-full">
+                        <Sparkles className="w-3 h-3" />
+                        Pro
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {!flags.premiumThemesEnabled && (
+              <div className="mt-6 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900">Upgrade to Pro for Premium Fonts</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Unlock 4 additional designer font combinations to make your store stand out.
+                    </p>
+                    <a
+                      href="https://gosovereign.io/wizard/preview"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      Upgrade Now
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1040,6 +1170,30 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                     </button>
                   </div>
                 </div>
+
+                {/* Autoplay Toggle */}
+                {(settings.videoBanner?.type === "youtube" || settings.videoBanner?.type === "upload") && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.videoBanner?.autoplay ?? true}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            videoBanner: {
+                              ...settings.videoBanner!,
+                              autoplay: e.target.checked,
+                            },
+                          })
+                        }
+                        className="w-5 h-5 rounded border-gray-300 text-brand focus:ring-brand"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Auto-play video</span>
+                    </label>
+                    <span className="text-sm text-gray-500">(Video will start muted due to browser policies)</span>
+                  </div>
+                )}
 
                 {/* YouTube URL Input */}
                 {settings.videoBanner?.type === "youtube" && (
@@ -1177,7 +1331,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                     <button
                       onClick={() => handleSaveDomain(true)}
                       disabled={domainSaving || !customDomainInput.trim()}
-                      className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                      className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                       {domainSaving ? (
                         <>
@@ -1631,7 +1785,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
             </div>
             <button
               onClick={addFAQ}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               Add Question
@@ -1802,7 +1956,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                 <div className="flex items-center gap-2">
                   <a
                     href="mailto:info@gosovereign.io?subject=Custom Domain Setup Request"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity text-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors text-sm"
                   >
                     Contact Support
                     <ExternalLink className="w-4 h-4" />
@@ -1838,7 +1992,7 @@ Contact info@gosovereign.io for assistance with custom domain setup.
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base font-medium"
+          className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 text-base font-medium"
         >
           {saved ? (
             <>

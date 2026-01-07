@@ -7,6 +7,7 @@ import { WishlistProvider } from "@/components/WishlistContext";
 import { CustomerAuthProvider } from "@/components/CustomerAuthContext";
 import { getStoreConfig } from "@/lib/store";
 import { getThemeById, generateThemeCSS } from "@/lib/themes";
+import { getFontById, generateFontCSS } from "@/lib/fonts";
 import { getStoreSettingsFromDB } from "@/lib/settings";
 
 // Force dynamic rendering so settings changes appear for all visitors
@@ -31,14 +32,20 @@ export default async function RootLayout({
   // Fetch all runtime settings from database (falls back to env vars)
   const settings = await getStoreSettingsFromDB();
   const theme = getThemeById(settings.themePreset);
-  const themeCSS = generateThemeCSS(theme);
+  const themeCSS = generateThemeCSS(theme, settings.darkModeEnabled);
+  const font = getFontById(settings.fontPreset);
+  const fontCSS = generateFontCSS(font);
 
   return (
     <html lang="en">
       <head>
+        {/* Load Google Fonts if using a custom font preset */}
+        {font.googleFontsUrl && (
+          <link href={font.googleFontsUrl} rel="stylesheet" />
+        )}
         <style
           dangerouslySetInnerHTML={{
-            __html: themeCSS,
+            __html: themeCSS + fontCSS,
           }}
         />
       </head>

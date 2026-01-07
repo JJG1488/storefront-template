@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand text-white py-3 rounded-lg hover:opacity-90 disabled:opacity-50"
+            className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
           >
             {loading ? loadingText : buttonText}
           </button>

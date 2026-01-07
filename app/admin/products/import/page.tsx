@@ -322,7 +322,7 @@ export default function ImportProductsPage() {
             <p className="text-sm text-gray-500 mb-4">or click to select a file</p>
             <button
               type="button"
-              className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+              className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               <Upload className="w-4 h-4 inline mr-2" />
               Choose File
@@ -516,7 +516,7 @@ export default function ImportProductsPage() {
             <button
               onClick={handlePreview}
               disabled={mapping.name === null}
-              className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Preview Import <ArrowRight className="w-4 h-4 inline ml-1" />
             </button>
@@ -686,7 +686,7 @@ export default function ImportProductsPage() {
             </button>
             <button
               onClick={handleImport}
-              className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+              className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               Import {productsToImport.length} Products
               {isPlatformImport && totalVariants > 0 && ` (${totalVariants} variants)`}
@@ -769,7 +769,7 @@ export default function ImportProductsPage() {
               </button>
               <button
                 onClick={() => router.push("/admin/products")}
-                className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+                className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
               >
                 View Products
               </button>

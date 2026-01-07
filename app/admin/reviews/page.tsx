@@ -179,7 +179,7 @@ export default function ReviewsAdminPage() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
           Add Review
@@ -343,7 +343,7 @@ export default function ReviewsAdminPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+                    className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
                   >
                     {editingReview ? "Save Changes" : "Add Review"}
                   </button>
@@ -364,7 +364,7 @@ export default function ReviewsAdminPage() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add First Review

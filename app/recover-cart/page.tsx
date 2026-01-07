@@ -111,7 +111,7 @@ function RecoverCartContent() {
           </p>
           <Link
             href="/cart"
-            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:opacity-90"
+            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             <ShoppingCart className="w-5 h-5" />
             Go to Cart Now
@@ -135,7 +135,7 @@ function RecoverCartContent() {
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:opacity-90"
+            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             Continue Shopping
           </Link>
@@ -154,7 +154,7 @@ function RecoverCartContent() {
         <p className="text-gray-600 mb-6">{errorMessage}</p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:opacity-90"
+          className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           <ShoppingCart className="w-5 h-5" />
           Start Shopping

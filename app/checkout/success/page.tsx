@@ -100,7 +100,7 @@ function SuccessContent() {
           </p>
           <Link
             href="/account/register"
-            className="inline-flex items-center gap-2 bg-brand text-white px-5 py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-brand text-white px-5 py-2.5 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             Create Account
             <ArrowRight className="w-4 h-4" />
@@ -128,7 +128,7 @@ function SuccessContent() {
           </p>
           <Link
             href="/account/orders"
-            className="inline-flex items-center gap-2 bg-brand text-white px-5 py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-brand text-white px-5 py-2.5 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             View Orders
             <ArrowRight className="w-4 h-4" />

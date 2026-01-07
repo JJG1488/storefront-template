@@ -243,7 +243,7 @@ export default function AddressesPage() {
           {!showForm && (
             <button
               onClick={handleAddNew}
-              className="inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-lg font-medium hover:opacity-90"
+              className="inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               <Plus className="w-5 h-5" />
               Add Address
@@ -447,7 +447,7 @@ export default function AddressesPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 sm:flex-none bg-brand text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none bg-brand text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingId ? "Update Address" : "Save Address"}
@@ -474,7 +474,7 @@ export default function AddressesPage() {
           </p>
           <button
             onClick={handleAddNew}
-            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg font-medium hover:opacity-90"
+            className="inline-flex items-center gap-2 bg-brand text-white px-6 py-3 rounded-lg font-medium hover:bg-brand-hover active:bg-brand-active transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add Your First Address

@@ -389,7 +389,7 @@ export default function EditProductPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-brand text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+              className="px-6 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>

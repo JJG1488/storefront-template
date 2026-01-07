@@ -338,7 +338,7 @@ export function VariantEditor({
                   type="button"
                   onClick={saveVariants}
                   disabled={saving || !productId}
-                  className="px-4 py-2 bg-brand text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 bg-brand text-white rounded-lg text-sm hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Variants"}
                 </button>

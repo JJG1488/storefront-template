@@ -7,6 +7,7 @@ interface VideoBannerSettings {
   youtubeUrl?: string;
   uploadedUrl?: string;
   imageUrl?: string;
+  autoplay?: boolean; // Default true for backward compatibility
 }
 
 /**
@@ -21,6 +22,7 @@ export async function getVideoBannerSettings(): Promise<VideoBannerProps> {
     youtubeUrl: "",
     uploadedUrl: "",
     imageUrl: "",
+    autoplay: true, // Default true for backward compatibility
   };
 
   // Don't fetch during build time
@@ -62,6 +64,7 @@ export async function getVideoBannerSettings(): Promise<VideoBannerProps> {
       youtubeUrl: videoBanner.youtubeUrl ?? "",
       uploadedUrl: videoBanner.uploadedUrl ?? "",
       imageUrl: videoBanner.imageUrl ?? "",
+      autoplay: videoBanner.autoplay ?? true, // Default true for backward compatibility
     };
   } catch (error) {
     console.error("Failed to fetch video banner settings:", error);

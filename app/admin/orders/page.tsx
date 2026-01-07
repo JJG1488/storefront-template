@@ -75,7 +75,7 @@ export default function OrdersPage() {
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90"
+          className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           Retry
         </button>

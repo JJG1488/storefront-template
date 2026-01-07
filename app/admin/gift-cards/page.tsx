@@ -69,7 +69,7 @@ export default function AdminGiftCardsPage() {
         </div>
         <Link
           href="/admin/gift-cards/new"
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
         >
           <Plus className="w-4 h-4" />
           Issue Gift Card
@@ -91,7 +91,7 @@ export default function AdminGiftCardsPage() {
             </p>
             <Link
               href="/admin/gift-cards/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               <Plus className="w-4 h-4" />
               Issue Gift Card

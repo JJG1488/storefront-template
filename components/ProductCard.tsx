@@ -171,7 +171,7 @@ export function ProductCard({ product, showQuickAdd = true }: Props) {
           <button
             onClick={handleQuickAdd}
             disabled={isOutOfStock || !canAdd}
-            className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-hover active:bg-brand-active disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isOutOfStock ? "Sold Out" : !canAdd ? "Max" : "Add"}
           </button>

@@ -72,7 +72,7 @@ export default function CollectionsPage() {
         </div>
         <Link
           href="/admin/collections/new"
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto justify-center"
+          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4" />
           Create Collection
@@ -92,7 +92,7 @@ export default function CollectionsPage() {
             <p className="text-gray-500 mb-4">Create collections to organize your products</p>
             <Link
               href="/admin/collections/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors"
             >
               <Plus className="w-4 h-4" />
               Create Collection

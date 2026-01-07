@@ -6,9 +6,15 @@
   /* Primary brand color - main accent */
   --brand-color: #6366f1;
   --brand-color-10: rgba(99, 102, 241, 0.1);
+  /* Brand hover/active variants (auto-generated from primary) */
+  --brand-hover: #4f46e5;
+  --brand-active: #4338ca;
+  --brand-light: #a5b4fc;
 
   /* Secondary accent color */
   --secondary-color: #8b5cf6;
+  --secondary-hover: #7c3aed;
+  --secondary-active: #6d28d9;
 
   /* Background colors */
   --bg-primary: #ffffff;
@@ -27,4 +33,17 @@
   --footer-bg: #111827;
   --footer-text: #ffffff;
   --footer-text-muted: #9ca3af;
+
+  /* Font families (set by font presets) */
+  --font-heading: system-ui, -apple-system, sans-serif;
+  --font-body: system-ui, -apple-system, sans-serif;
+}
+
+/* Apply font families */
+body {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }

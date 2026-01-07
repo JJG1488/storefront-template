@@ -101,7 +101,7 @@ export default function CheckGiftCardBalancePage() {
         <button
           type="submit"
           disabled={loading || !code.trim()}
-          className="w-full py-3 px-6 bg-brand text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3 px-6 bg-brand text-white font-semibold rounded-lg hover:bg-brand-hover active:bg-brand-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
