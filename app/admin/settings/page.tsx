@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image, ChevronDown, Package, Bell, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, Store, Megaphone, Truck, Users, Check, HelpCircle, Plus, Trash2, GripVertical, BookOpen, Download, Globe, ExternalLink, Palette, Lock, Sparkles, Video, Youtube, Upload, Image, ChevronDown, Package, Bell, EyeOff, CreditCard, Link2, AlertCircle, RefreshCw } from "lucide-react";
 import { VideoUpload } from "@/components/VideoUpload";
 import { ImageUpload } from "@/components/ImageUpload";
 import { defaultContent, type ShippingMethod, type FAQItem } from "@/lib/content";
@@ -98,7 +99,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"general" | "appearance" | "domain" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "appearance" | "payments" | "domain" | "shipping" | "returns" | "faq" | "social" | "guides">("general");
   const [mobileTabsOpen, setMobileTabsOpen] = useState(false);
 
   // Domain-specific state
@@ -114,6 +115,58 @@ export default function SettingsPage() {
     message?: string;
   } | null>(null);
   const [customDomainInput, setCustomDomainInput] = useState("");
+
+  // Stripe connection state
+  const [stripeLoading, setStripeLoading] = useState(true);
+  const [stripeData, setStripeData] = useState<{
+    connected: boolean;
+    accountId: string | null;
+    reconnectUrl: string | null;
+  } | null>(null);
+  const [stripeJustConnected, setStripeJustConnected] = useState(false);
+
+  // Handle URL parameters for tab selection and stripe connection success
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Set tab from URL parameter
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["general", "appearance", "payments", "domain", "shipping", "returns", "faq", "social", "guides"].includes(tabParam)) {
+      setActiveTab(tabParam as typeof activeTab);
+    }
+
+    // Check if stripe was just connected
+    if (searchParams.get("stripe_connected") === "true") {
+      setStripeJustConnected(true);
+      // Remove the param from URL without refresh
+      const url = new URL(window.location.href);
+      url.searchParams.delete("stripe_connected");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
+  // Load Stripe status
+  useEffect(() => {
+    const loadStripeStatus = async () => {
+      if (activeTab !== "payments") return;
+
+      setStripeLoading(true);
+      try {
+        const token = localStorage.getItem("admin_token");
+        const res = await fetch("/api/admin/stripe/status", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStripeData(data);
+        }
+      } catch (err) {
+        console.error("Failed to load Stripe status:", err);
+      }
+      setStripeLoading(false);
+    };
+    loadStripeStatus();
+  }, [activeTab, stripeJustConnected]);
 
   // Load domain configuration
   useEffect(() => {
@@ -313,6 +366,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: "general" as const, label: "General", icon: Store },
     { id: "appearance" as const, label: "Appearance", icon: Palette },
+    { id: "payments" as const, label: "Payments", icon: CreditCard },
     // Domain tab only shown for Pro/Hosted tiers
     ...(flags.customDomainEnabled
       ? [{ id: "domain" as const, label: "Domain", icon: Globe }]
@@ -1270,6 +1324,138 @@ Contact info@gosovereign.io for assistance with custom domain setup.
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Payments Tab */}
+      {activeTab === "payments" && (
+        <div className="space-y-6">
+          {/* Success Message after OAuth */}
+          {stripeJustConnected && (
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <Check className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="font-medium text-green-900">Stripe Connected Successfully!</p>
+                <p className="text-sm text-green-700">
+                  Your store is now ready to accept payments.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <CreditCard className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Stripe Connection</h3>
+                <p className="text-sm text-gray-500">Manage your payment processing</p>
+              </div>
+            </div>
+
+            {stripeLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+              </div>
+            ) : stripeData?.connected ? (
+              <div className="space-y-4">
+                {/* Connected Status */}
+                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="font-medium text-green-900">Connected to Stripe</p>
+                    <p className="text-sm text-green-700">
+                      Account ID: {stripeData.accountId?.slice(0, 15)}...
+                    </p>
+                  </div>
+                  <Check className="w-5 h-5 text-green-600" />
+                </div>
+
+                {/* Reconnect Option */}
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Need to change accounts?</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    If you need to connect a different Stripe account or re-authorize your current account,
+                    you can do so through the GoSovereign platform.
+                  </p>
+                  {stripeData.reconnectUrl ? (
+                    <a
+                      href={stripeData.reconnectUrl}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Reconnect Stripe Account
+                    </a>
+                  ) : (
+                    <a
+                      href="https://gosovereign.io/wizard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Link2 className="w-4 h-4" />
+                      Go to GoSovereign Dashboard
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Not Connected Warning */}
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900">Stripe Not Connected</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Your store cannot process payments until you connect a Stripe account.
+                      Connect your account through the GoSovereign platform.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Connect Button */}
+                {stripeData?.reconnectUrl ? (
+                  <a
+                    href={stripeData.reconnectUrl}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Connect Stripe Account
+                  </a>
+                ) : (
+                  <a
+                    href="https://gosovereign.io/wizard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <Link2 className="w-4 h-4" />
+                    Connect via GoSovereign
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Stripe Dashboard Link */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h4 className="font-semibold text-gray-900 mb-3">Stripe Dashboard</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              View your payments, refunds, and payout schedule in the Stripe Dashboard.
+            </p>
+            <a
+              href="https://dashboard.stripe.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Open Stripe Dashboard
+              <ExternalLink className="w-4 h-4" />
+            </a>
           </div>
         </div>
       )}
