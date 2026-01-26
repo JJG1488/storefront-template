@@ -68,23 +68,23 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
 
       {/* Menu Panel */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white z-50 transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-[var(--bg-primary)] z-50 transform transition-transform duration-300 ease-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--border-light)]">
             <Link href="/" onClick={onClose} className="flex items-center gap-2">
               {settings.logoUrl ? (
                 <img src={settings.logoUrl} alt={store.name} className="h-8" />
               ) : (
-                <span className="text-lg font-bold">{store.name}</span>
+                <span className="text-lg font-bold text-[var(--text-primary)]">{store.name}</span>
               )}
             </Link>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors text-[var(--text-primary)]"
               aria-label="Close menu"
             >
               <X className="w-6 h-6" />
@@ -93,13 +93,13 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
 
           {/* Search Bar */}
           {onSearchClick && (
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-[var(--border-light)]">
               <button
                 onClick={() => {
                   onClose();
                   onSearchClick();
                 }}
-                className="flex items-center gap-3 w-full px-4 py-3 bg-gray-100 rounded-lg text-gray-500"
+                className="flex items-center gap-3 w-full px-4 py-3 bg-[var(--bg-secondary)] rounded-lg text-[var(--text-muted)]"
               >
                 <Search className="w-5 h-5" />
                 <span>Search products...</span>
@@ -115,18 +115,18 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                   key={link.href}
                   href={link.href}
                   onClick={onClose}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
                 >
-                  <link.icon className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-900">{link.label}</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
+                  <link.icon className="w-5 h-5 text-[var(--text-secondary)]" />
+                  <span className="font-medium text-[var(--text-primary)]">{link.label}</span>
+                  <ChevronRight className="w-4 h-4 text-[var(--text-muted)] ml-auto" />
                 </Link>
               ))}
             </div>
 
             {/* Quick Actions */}
-            <div className="p-4 border-t border-gray-100">
-              <h3 className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className="p-4 border-t border-[var(--border-light)]">
+              <h3 className="px-4 mb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 Quick Actions
               </h3>
               <div className="grid grid-cols-3 gap-2">
@@ -135,33 +135,33 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                     onClose();
                     if (onSearchClick) onSearchClick();
                   }}
-                  className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex flex-col items-center gap-2 p-4 bg-[var(--bg-secondary)] rounded-lg hover:opacity-80 transition-colors"
                 >
-                  <Search className="w-6 h-6 text-gray-600" />
-                  <span className="text-sm text-gray-700">Search</span>
+                  <Search className="w-6 h-6 text-[var(--text-secondary)]" />
+                  <span className="text-sm text-[var(--text-secondary)]">Search</span>
                 </button>
                 <Link
                   href="/wishlist"
                   onClick={onClose}
-                  className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex flex-col items-center gap-2 p-4 bg-[var(--bg-secondary)] rounded-lg hover:opacity-80 transition-colors"
                 >
-                  <Heart className="w-6 h-6 text-gray-600" />
-                  <span className="text-sm text-gray-700">Wishlist</span>
+                  <Heart className="w-6 h-6 text-[var(--text-secondary)]" />
+                  <span className="text-sm text-[var(--text-secondary)]">Wishlist</span>
                 </Link>
                 <Link
                   href="/account"
                   onClick={onClose}
-                  className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex flex-col items-center gap-2 p-4 bg-[var(--bg-secondary)] rounded-lg hover:opacity-80 transition-colors"
                 >
-                  <User className="w-6 h-6 text-gray-600" />
-                  <span className="text-sm text-gray-700">Account</span>
+                  <User className="w-6 h-6 text-[var(--text-secondary)]" />
+                  <span className="text-sm text-[var(--text-secondary)]">Account</span>
                 </Link>
               </div>
             </div>
 
             {/* Help Links */}
-            <div className="p-4 border-t border-gray-100">
-              <h3 className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div className="p-4 border-t border-[var(--border-light)]">
+              <h3 className="px-4 mb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 Help
               </h3>
               <div className="space-y-1">
@@ -170,7 +170,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                     key={link.href}
                     href={link.href}
                     onClick={onClose}
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                    className="block px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -180,7 +180,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-[var(--border-light)]">
             {/* Social Links */}
             {hasSocialLinks && (
               <div className="flex justify-center gap-4 mb-4">
@@ -189,7 +189,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                     href={settings.instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-brand hover:text-white transition-colors"
                   >
                     <Instagram className="w-5 h-5" />
                   </a>
@@ -199,7 +199,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                     href={settings.facebookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-brand hover:text-white transition-colors"
                   >
                     <Facebook className="w-5 h-5" />
                   </a>
@@ -209,7 +209,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
                     href={settings.twitterUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-brand hover:text-white transition-colors"
                   >
                     <Twitter className="w-5 h-5" />
                   </a>
@@ -217,7 +217,7 @@ export function MobileMenu({ isOpen, onClose, onSearchClick, settings }: MobileM
               </div>
             )}
 
-            <p className="text-center text-sm text-gray-400">
+            <p className="text-center text-sm text-[var(--text-muted)]">
               &copy; {new Date().getFullYear()} {store.name}
             </p>
           </div>
@@ -237,7 +237,7 @@ export function MenuButton({ onClick, isOpen }: MenuButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+      className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors lg:hidden"
       aria-label={isOpen ? "Close menu" : "Open menu"}
     >
       <div className="w-6 h-5 flex flex-col justify-between">

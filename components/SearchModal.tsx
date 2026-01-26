@@ -145,17 +145,17 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
       {/* Modal */}
       <div className="relative max-w-2xl mx-auto mt-20 mx-4">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-[var(--bg-primary)] rounded-2xl shadow-2xl overflow-hidden">
           {/* Search Input */}
-          <div className="flex items-center border-b border-gray-200 px-4">
-            <Search className="w-5 h-5 text-gray-400" />
+          <div className="flex items-center border-b border-[var(--border-color)] px-4">
+            <Search className="w-5 h-5 text-[var(--text-muted)]" />
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Search products..."
-              className="flex-1 px-4 py-4 text-lg focus:outline-none"
+              className="flex-1 px-4 py-4 text-lg focus:outline-none bg-transparent text-[var(--text-primary)]"
             />
             {query && (
               <button
@@ -163,15 +163,15 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   setQuery("");
                   setResults([]);
                 }}
-                className="p-1 hover:bg-gray-100 rounded-full"
+                className="p-1 hover:bg-[var(--bg-secondary)] rounded-full"
                 aria-label="Clear search"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-[var(--text-muted)]" />
               </button>
             )}
             <button
               onClick={onClose}
-              className="ml-2 px-3 py-1 text-sm text-gray-500 hover:text-gray-700"
+              className="ml-2 px-3 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               aria-label="Close search (Escape)"
             >
               ESC
@@ -190,7 +190,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             {/* Results */}
             {!loading && results.length > 0 && (
               <div className="p-4">
-                <p className="text-sm text-gray-500 mb-3">
+                <p className="text-sm text-[var(--text-muted)] mb-3">
                   {results.length} result{results.length !== 1 ? "s" : ""}
                 </p>
                 <div className="space-y-2">
@@ -199,10 +199,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       key={product.id}
                       href={`/products/${product.id}`}
                       onClick={handleResultClick}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors group"
                     >
                       {/* Product Image */}
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-lg overflow-hidden flex-shrink-0">
                         {product.images[0] ? (
                           <img
                             src={product.images[0]}
@@ -210,7 +210,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
                             <Search className="w-6 h-6" />
                           </div>
                         )}
@@ -218,22 +218,22 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 truncate group-hover:text-brand transition-colors">
+                        <h4 className="font-medium text-[var(--text-primary)] truncate group-hover:text-brand transition-colors">
                           {product.name}
                         </h4>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-[var(--text-muted)] truncate">
                           {product.description}
                         </p>
                       </div>
 
                       {/* Price */}
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-[var(--text-primary)]">
                           {formatPrice(product.price)}
                         </p>
                       </div>
 
-                      <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight className="w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
                   ))}
                 </div>
@@ -243,8 +243,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             {/* No Results */}
             {!loading && query && results.length === 0 && (
               <div className="p-8 text-center">
-                <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No products found for "{query}"</p>
+                <Search className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+                <p className="text-[var(--text-muted)]">No products found for "{query}"</p>
               </div>
             )}
 
@@ -255,13 +255,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 {recentSearches.length > 0 && (
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Recent Searches
                       </h3>
                       <button
                         onClick={clearRecentSearches}
-                        className="text-xs text-gray-500 hover:text-gray-700"
+                        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                       >
                         Clear all
                       </button>
@@ -271,7 +271,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         <button
                           key={index}
                           onClick={() => handleRecentSearchClick(search)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+                          className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-full text-sm hover:opacity-80 transition-colors"
                         >
                           {search}
                         </button>
@@ -282,7 +282,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
                 {/* Popular/Trending */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4" />
                     Popular Searches
                   </h3>
@@ -292,7 +292,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         <button
                           key={term}
                           onClick={() => handleRecentSearchClick(term)}
-                          className="px-3 py-1.5 border border-gray-200 text-gray-700 rounded-full text-sm hover:border-brand hover:text-brand transition-colors"
+                          className="px-3 py-1.5 border border-[var(--border-color)] text-[var(--text-secondary)] rounded-full text-sm hover:border-brand hover:text-brand transition-colors"
                         >
                           {term}
                         </button>
@@ -320,11 +320,11 @@ export function SearchButton({ onClick, variant = "icon" }: SearchButtonProps) {
     return (
       <button
         onClick={onClick}
-        className="flex items-center gap-2 w-full max-w-md px-4 py-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors"
+        className="flex items-center gap-2 w-full max-w-md px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-lg hover:opacity-80 transition-colors"
       >
         <Search className="w-5 h-5" />
         <span>Search products...</span>
-        <span className="ml-auto text-xs text-gray-400 hidden sm:block">⌘K</span>
+        <span className="ml-auto text-xs text-[var(--text-muted)] hidden sm:block">⌘K</span>
       </button>
     );
   }
@@ -332,7 +332,7 @@ export function SearchButton({ onClick, variant = "icon" }: SearchButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+      className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors"
       aria-label="Search"
     >
       <Search className="w-5 h-5" />
